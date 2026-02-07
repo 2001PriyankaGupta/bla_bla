@@ -3,358 +3,358 @@
     Support Management
 @endsection
 
-@section('css')
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body {
-            background: #f8f9fa;
-            color: #333;
-        }
 
-        .swal2-toast {
-            font-size: 12px !important;
-            padding: 6px 10px !important;
-            min-width: auto !important;
-            width: 220px !important;
-            line-height: 1.3em !important;
-        }
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    body {
+        background: #f8f9fa;
+        color: #333;
+    }
 
-        .swal2-toast .swal2-icon {
-            width: 24px !important;
-            height: 24px !important;
-            margin-right: 6px !important;
-        }
+    .swal2-toast {
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+        min-width: auto !important;
+        width: 220px !important;
+        line-height: 1.3em !important;
+    }
 
-        .swal2-toast .swal2-title {
-            font-size: 13px !important;
-        }
+    .swal2-toast .swal2-icon {
+        width: 24px !important;
+        height: 24px !important;
+        margin-right: 6px !important;
+    }
 
-        .page-header {
-            background: #fff;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            border-left: 4px solid #249722;
-        }
+    .swal2-toast .swal2-title {
+        font-size: 13px !important;
+    }
 
+    .page-header {
+        background: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border-left: 4px solid #249722;
+    }
+
+    .support-tabs {
+        display: flex;
+        gap: 24px;
+        border-bottom: 2px solid #eaeaea;
+        margin-bottom: 24px;
+        padding: 0 10px;
+    }
+
+    .support-tab-link {
+        font-size: 1.08rem;
+        color: #6c757d;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 12px 0;
+        margin-right: 24px;
+        border: none;
+        background: transparent;
+        border-bottom: 3px solid transparent;
+        transition: color 0.2s, border 0.2s;
+    }
+
+    .support-tab-link.active {
+        color: #249722;
+        border-bottom: 3px solid #249722;
+    }
+
+    .card {
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        margin-bottom: 25px;
+    }
+
+    .card-header {
+        background: #fff;
+        border-bottom: 1px solid #eaeaea;
+        padding: 16px 20px;
+        border-radius: 10px 10px 0 0 !important;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    .dataTables_wrapper {
+        padding: 0;
+    }
+
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter {
+        margin-bottom: 15px;
+    }
+
+    .dataTables_wrapper .dataTables_length select,
+    .dataTables_wrapper .dataTables_filter input {
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        padding: 5px 10px;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        border-radius: 6px !important;
+        margin: 0 2px;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background: #249722 !important;
+        border-color: #249722 !important;
+        color: white !important;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+        background: #e9ecef !important;
+        border-color: #dee2e6 !important;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+        background: #1e7e1c !important;
+        border-color: #1e7e1c !important;
+    }
+
+    table.dataTable {
+        border-collapse: collapse !important;
+        margin-top: 0 !important;
+        margin-bottom: 15px !important;
+    }
+
+    table.dataTable thead th {
+        background: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        border-bottom: 1px solid #dee2e6;
+        padding: 12px 15px;
+        vertical-align: middle;
+    }
+
+    table.dataTable tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    table.dataTable tbody tr {
+        background: #fff;
+        transition: background 0.2s;
+    }
+
+    table.dataTable tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    table.dataTable tbody tr:last-child td {
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .badge-status,
+    .badge-priority {
+        border-radius: 20px;
+        padding: 5px 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .badge-status.open,
+    .badge-priority.high {
+        background: #249722;
+        color: #fff;
+    }
+
+    .badge-status.progress,
+    .badge-priority.medium {
+        background: #ffc107;
+        color: #212529;
+        height: 18px;
+    }
+
+    .badge-status.closed,
+    .badge-priority.low {
+        background: #6c757d;
+        color: #fff;
+    }
+
+    .action-btn {
+        color: #249722;
+        font-weight: 500;
+        text-decoration: none;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .action-btn:hover {
+        color: #1e7e1c;
+        text-decoration: underline;
+    }
+
+    .btn-primary {
+        background: #249722;
+        border-color: #249722;
+        font-weight: 500;
+    }
+
+    .btn-primary:hover {
+        background: #1e7e1c;
+        border-color: #1e7e1c;
+    }
+
+    .btn-outline-primary {
+        color: #249722;
+        border-color: #249722;
+        font-weight: 500;
+    }
+
+    .btn-outline-primary:hover {
+        background: #249722;
+        border-color: #249722;
+        color: white;
+    }
+
+    .tooltip {
+        font-size: 0.875rem;
+    }
+
+    .chat-section {
+        margin-top: 30px;
+    }
+
+    .ticket-user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 12px;
+    }
+
+    .chat-input {
+        width: 100%;
+        border-radius: 8px;
+        border: 1.5px solid #cfcfcf;
+        padding: 12px 15px;
+        font-size: 1rem;
+        outline: none;
+        transition: border 0.2s;
+    }
+
+    .chat-input:focus {
+        border-color: #249722;
+    }
+
+    .btn-send {
+        background: #249722;
+        color: #fff;
+        padding: 10px 24px;
+        font-weight: 500;
+        border-radius: 6px;
+        border: none;
+        transition: background 0.2s;
+    }
+
+    .btn-send:hover {
+        background: #1e7e1c;
+    }
+
+    .quick-reply-card {
+        margin-top: 25px;
+    }
+
+    .quick-reply-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        padding: 10px 0;
+    }
+
+    .quick-reply-row:last-child {
+        border-bottom: none;
+    }
+
+    .btn-quickuse {
+        background: none;
+        border: none;
+        color: #249722;
+        font-weight: 500;
+        text-decoration: underline;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .btn-quickuse:hover {
+        color: #1e7e1c;
+    }
+
+    /* FAQ Modal Styles */
+    .modal-title {
+        color: #249722;
+        font-weight: 700;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #eaeaea;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #eaeaea;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        color: #dee2e6;
+    }
+
+    @media (max-width: 768px) {
         .support-tabs {
-            display: flex;
-            gap: 24px;
-            border-bottom: 2px solid #eaeaea;
-            margin-bottom: 24px;
-            padding: 0 10px;
+            flex-direction: column;
+            gap: 0;
         }
 
         .support-tab-link {
-            font-size: 1.08rem;
-            color: #6c757d;
-            font-weight: 600;
-            cursor: pointer;
-            padding: 12px 0;
-            margin-right: 24px;
-            border: none;
-            background: transparent;
-            border-bottom: 3px solid transparent;
-            transition: color 0.2s, border 0.2s;
+            margin-right: 0;
+            text-align: left;
+            padding: 10px 15px;
+            border-bottom: 1px solid #eaeaea;
+            border-left: 3px solid transparent;
         }
 
         .support-tab-link.active {
-            color: #249722;
-            border-bottom: 3px solid #249722;
-        }
-
-        .card {
-            border-radius: 10px;
-            border: none;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-            margin-bottom: 25px;
-        }
-
-        .card-header {
-            background: #fff;
             border-bottom: 1px solid #eaeaea;
-            padding: 16px 20px;
-            border-radius: 10px 10px 0 0 !important;
-            font-weight: 600;
-            color: #333;
+            border-left: 3px solid #249722;
         }
 
         .card-body {
-            padding: 20px;
+            padding: 15px;
         }
 
-        .dataTables_wrapper {
-            padding: 0;
-        }
-
-        .dataTables_wrapper .dataTables_length,
-        .dataTables_wrapper .dataTables_filter {
-            margin-bottom: 15px;
-        }
-
-        .dataTables_wrapper .dataTables_length select,
-        .dataTables_wrapper .dataTables_filter input {
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            padding: 5px 10px;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            border-radius: 6px !important;
-            margin: 0 2px;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-            background: #249722 !important;
-            border-color: #249722 !important;
-            color: white !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-            background: #e9ecef !important;
-            border-color: #dee2e6 !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-            background: #1e7e1c !important;
-            border-color: #1e7e1c !important;
-        }
-
-        table.dataTable {
-            border-collapse: collapse !important;
-            margin-top: 0 !important;
-            margin-bottom: 15px !important;
-        }
-
-        table.dataTable thead th {
-            background: #f8f9fa;
-            color: #495057;
-            font-weight: 600;
-            border-bottom: 1px solid #dee2e6;
-            padding: 12px 15px;
-            vertical-align: middle;
-        }
-
+        table.dataTable thead th,
         table.dataTable tbody td {
-            padding: 12px 15px;
-            vertical-align: middle;
-            border-top: 1px solid #f0f0f0;
+            padding: 8px 10px;
+            font-size: 0.9rem;
         }
+    }
+</style>
 
-        table.dataTable tbody tr {
-            background: #fff;
-            transition: background 0.2s;
-        }
-
-        table.dataTable tbody tr:hover {
-            background: #f8f9fa;
-        }
-
-        table.dataTable tbody tr:last-child td {
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .badge-status,
-        .badge-priority {
-            border-radius: 20px;
-            padding: 5px 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .badge-status.open,
-        .badge-priority.high {
-            background: #249722;
-            color: #fff;
-        }
-
-        .badge-status.progress,
-        .badge-priority.medium {
-            background: #ffc107;
-            color: #212529;
-            height: 18px;
-        }
-
-        .badge-status.closed,
-        .badge-priority.low {
-            background: #6c757d;
-            color: #fff;
-        }
-
-        .action-btn {
-            color: #249722;
-            font-weight: 500;
-            text-decoration: none;
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        .action-btn:hover {
-            color: #1e7e1c;
-            text-decoration: underline;
-        }
-
-        .btn-primary {
-            background: #249722;
-            border-color: #249722;
-            font-weight: 500;
-        }
-
-        .btn-primary:hover {
-            background: #1e7e1c;
-            border-color: #1e7e1c;
-        }
-
-        .btn-outline-primary {
-            color: #249722;
-            border-color: #249722;
-            font-weight: 500;
-        }
-
-        .btn-outline-primary:hover {
-            background: #249722;
-            border-color: #249722;
-            color: white;
-        }
-
-        .tooltip {
-            font-size: 0.875rem;
-        }
-
-        .chat-section {
-            margin-top: 30px;
-        }
-
-        .ticket-user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 12px;
-        }
-
-        .chat-input {
-            width: 100%;
-            border-radius: 8px;
-            border: 1.5px solid #cfcfcf;
-            padding: 12px 15px;
-            font-size: 1rem;
-            outline: none;
-            transition: border 0.2s;
-        }
-
-        .chat-input:focus {
-            border-color: #249722;
-        }
-
-        .btn-send {
-            background: #249722;
-            color: #fff;
-            padding: 10px 24px;
-            font-weight: 500;
-            border-radius: 6px;
-            border: none;
-            transition: background 0.2s;
-        }
-
-        .btn-send:hover {
-            background: #1e7e1c;
-        }
-
-        .quick-reply-card {
-            margin-top: 25px;
-        }
-
-        .quick-reply-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #eee;
-            padding: 10px 0;
-        }
-
-        .quick-reply-row:last-child {
-            border-bottom: none;
-        }
-
-        .btn-quickuse {
-            background: none;
-            border: none;
-            color: #249722;
-            font-weight: 500;
-            text-decoration: underline;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        .btn-quickuse:hover {
-            color: #1e7e1c;
-        }
-
-        /* FAQ Modal Styles */
-        .modal-title {
-            color: #249722;
-            font-weight: 700;
-        }
-
-        .modal-header {
-            border-bottom: 1px solid #eaeaea;
-        }
-
-        .modal-footer {
-            border-top: 1px solid #eaeaea;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #6c757d;
-        }
-
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            color: #dee2e6;
-        }
-
-        @media (max-width: 768px) {
-            .support-tabs {
-                flex-direction: column;
-                gap: 0;
-            }
-
-            .support-tab-link {
-                margin-right: 0;
-                text-align: left;
-                padding: 10px 15px;
-                border-bottom: 1px solid #eaeaea;
-                border-left: 3px solid transparent;
-            }
-
-            .support-tab-link.active {
-                border-bottom: 1px solid #eaeaea;
-                border-left: 3px solid #249722;
-            }
-
-            .card-body {
-                padding: 15px;
-            }
-
-            table.dataTable thead th,
-            table.dataTable tbody td {
-                padding: 8px 10px;
-                font-size: 0.9rem;
-            }
-        }
-    </style>
-@endsection
 
 @section('content')
     <div class="container-fluid py-4 px-md-4">

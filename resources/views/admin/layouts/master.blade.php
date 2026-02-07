@@ -1,7 +1,5 @@
 <?php
 
-
-
 ?>
 
 <!doctype html>
@@ -16,6 +14,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- App favicon -->
     <link rel="shortcut icon" href="#">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- include head css -->
     @include('admin.layouts.head-css')

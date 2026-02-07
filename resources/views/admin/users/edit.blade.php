@@ -3,128 +3,127 @@
     Edit User - {{ $user->name }}
 @endsection
 
-@section('css')
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary-color: #249722;
-            --primary-light: #e8f5e9;
-            --secondary-color: #6c757d;
-            --light-bg: #f8f9fa;
-            --border-color: #e9ecef;
-            --card-shadow: 0 4px 12px rgba(25, 151, 34, 0.08);
-        }
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    :root {
+        --primary-color: #249722;
+        --primary-light: #e8f5e9;
+        --secondary-color: #6c757d;
+        --light-bg: #f8f9fa;
+        --border-color: #e9ecef;
+        --card-shadow: 0 4px 12px rgba(25, 151, 34, 0.08);
+    }
 
-        .user-edit-container {
-            background-color: #f5f6f8;
-            min-height: 100vh;
-            padding: 20px;
-        }
+    .user-edit-container {
+        background-color: #f5f6f8;
+        min-height: 100vh;
+        padding: 20px;
+    }
 
-        .page-header {
-            background: white;
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: var(--card-shadow);
-            border: 1px solid rgba(25, 151, 34, 0.1);
-        }
+    .page-header {
+        background: white;
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(25, 151, 34, 0.1);
+    }
 
-        .edit-form-card {
-            background: white;
-            border-radius: 16px;
-            padding: 30px;
-            box-shadow: var(--card-shadow);
-            border: 1px solid rgba(25, 151, 34, 0.1);
-        }
+    .edit-form-card {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(25, 151, 34, 0.1);
+    }
 
-        .form-label {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 8px;
-        }
+    .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
 
-        .form-control,
-        .form-select {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 12px 15px;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-        }
+    .form-control,
+    .form-select {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 12px 15px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
 
-        .form-control:focus,
-        .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(25, 151, 34, 0.15);
-        }
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(25, 151, 34, 0.15);
+    }
 
-        .avatar-upload {
-            text-align: center;
-            padding: 20px;
-            border: 2px dashed var(--border-color);
-            border-radius: 16px;
-            background: var(--light-bg);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+    .avatar-upload {
+        text-align: center;
+        padding: 20px;
+        border: 2px dashed var(--border-color);
+        border-radius: 16px;
+        background: var(--light-bg);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
 
-        .avatar-upload:hover {
-            border-color: var(--primary-color);
-            background: var(--primary-light);
-        }
+    .avatar-upload:hover {
+        border-color: var(--primary-color);
+        background: var(--primary-light);
+    }
 
+    .avatar-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid var(--primary-light);
+        margin-bottom: 15px;
+    }
+
+    .upload-text {
+        color: var(--secondary-color);
+        margin-bottom: 10px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color), #34c759);
+        border: none;
+        padding: 12px 30px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #1e7a1d, #249722);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(25, 151, 34, 0.4);
+    }
+
+    .btn-outline-secondary {
+        color: var(--secondary-color);
+        border-color: var(--secondary-color);
+        padding: 12px 30px;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .btn-outline-secondary:hover {
+        background: var(--secondary-color);
+        color: white;
+    }
+
+    @media (max-width: 768px) {
         .avatar-preview {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid var(--primary-light);
-            margin-bottom: 15px;
+            width: 80px;
+            height: 80px;
         }
+    }
+</style>
 
-        .upload-text {
-            color: var(--secondary-color);
-            margin-bottom: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), #34c759);
-            border: none;
-            padding: 12px 30px;
-            border-radius: 10px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #1e7a1d, #249722);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(25, 151, 34, 0.4);
-        }
-
-        .btn-outline-secondary {
-            color: var(--secondary-color);
-            border-color: var(--secondary-color);
-            padding: 12px 30px;
-            border-radius: 10px;
-            font-weight: 600;
-        }
-
-        .btn-outline-secondary:hover {
-            background: var(--secondary-color);
-            color: white;
-        }
-
-        @media (max-width: 768px) {
-            .avatar-preview {
-                width: 80px;
-                height: 80px;
-            }
-        }
-    </style>
-@endsection
 
 @section('content')
     <div class="user-edit-container">
@@ -263,6 +262,9 @@
 
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         function previewImage(input) {

@@ -3,163 +3,164 @@
     Settings Management
 @endsection
 
-@section('css')
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
-        rel="stylesheet" />
 
-    <style>
-        .select2-container--bootstrap-5 .select2-selection {
-            min-height: 45px;
-            border: 1px solid #ced4da;
-            border-radius: 0.375rem;
-        }
 
-        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
 
-        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 0.25rem;
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
-        }
+<style>
+    .select2-container--bootstrap-5 .select2-selection {
+        min-height: 45px;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+    }
 
-        .select2-container--bootstrap-5 .select2-dropdown {
-            border: 1px solid #ced4da;
-            border-radius: 0.375rem;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        }
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
 
-        .select2-container--bootstrap-5 .select2-results__option--selected {
-            background-color: var(--primary-color);
-            color: white;
-        }
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
 
-        .select2-container--bootstrap-5 .select2-results__option--highlighted {
-            background-color: var(--primary-light);
-            color: var(--primary-dark);
-        }
+    .select2-container--bootstrap-5 .select2-dropdown {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
 
-        /* Fix for modal positioning */
-        .select2-container--open .select2-dropdown--below {
-            z-index: 1060;
-        }
+    .select2-container--bootstrap-5 .select2-results__option--selected {
+        background-color: var(--primary-color);
+        color: white;
+    }
 
-        :root {
-            --primary-color: #249722;
-            --primary-light: #e8f5e8;
-            --primary-dark: #1e7a1c;
-        }
+    .select2-container--bootstrap-5 .select2-results__option--highlighted {
+        background-color: var(--primary-light);
+        color: var(--primary-dark);
+    }
 
-        .settings-nav .nav-link {
-            color: #6c757d;
-            font-weight: 500;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 0.5rem;
-            transition: all 0.3s;
-        }
+    /* Fix for modal positioning */
+    .select2-container--open .select2-dropdown--below {
+        z-index: 1060;
+    }
 
-        .settings-nav .nav-link.active {
-            background-color: var(--primary-color);
-            color: white;
-        }
+    :root {
+        --primary-color: #249722;
+        --primary-light: #e8f5e8;
+        --primary-dark: #1e7a1c;
+    }
 
-        .settings-nav .nav-link:hover:not(.active) {
-            background-color: #f8f9fa;
-            color: var(--primary-color);
-        }
+    .settings-nav .nav-link {
+        color: #6c757d;
+        font-weight: 500;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s;
+    }
 
-        .settings-tab-pane {
-            display: none;
-        }
+    .settings-nav .nav-link.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
 
-        .settings-tab-pane.active {
-            display: block;
-        }
+    .settings-nav .nav-link:hover:not(.active) {
+        background-color: #f8f9fa;
+        color: var(--primary-color);
+    }
 
-        .card {
-            border: none;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            border-radius: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
+    .settings-tab-pane {
+        display: none;
+    }
 
-        .card-header {
-            background-color: var(--primary-color);
-            color: white;
-            border-radius: 0.5rem 0.5rem 0 0 !important;
-            padding: 1rem 1.25rem;
-            font-weight: 600;
-        }
+    .settings-tab-pane.active {
+        display: block;
+    }
 
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
+    .card {
+        border: none;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
 
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-            border-color: var(--primary-dark);
-        }
+    .card-header {
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 0.5rem 0.5rem 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+    }
 
-        .api-key-display {
-            background-color: #f8f9fa;
-            border: 1px dashed #dee2e6;
-            padding: 0.75rem;
-            border-radius: 0.375rem;
-            font-family: monospace;
-            font-size: 0.875rem;
-        }
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
 
-        .permission-group {
-            border: 1px solid #e3e6f0;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-        }
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+        border-color: var(--primary-dark);
+    }
 
-        .permission-group-header {
-            background-color: #f8f9fa;
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #e3e6f0;
-            font-weight: 600;
-        }
+    .api-key-display {
+        background-color: #f8f9fa;
+        border: 1px dashed #dee2e6;
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        font-family: monospace;
+        font-size: 0.875rem;
+    }
 
-        .permission-items {
-            padding: 1rem;
-        }
+    .permission-group {
+        border: 1px solid #e3e6f0;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
 
-        .logo-preview {
-            max-width: 150px;
-            max-height: 50px;
-            object-fit: contain;
-        }
+    .permission-group-header {
+        background-color: #f8f9fa;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e3e6f0;
+        font-weight: 600;
+    }
 
-        .swal2-toast {
-            font-size: 12px !important;
-            padding: 6px 10px !important;
-            min-width: auto !important;
-            width: 220px !important;
-            line-height: 1.3em !important;
-        }
+    .permission-items {
+        padding: 1rem;
+    }
 
-        .swal2-toast .swal2-icon {
-            width: 24px !important;
-            height: 24px !important;
-            margin-right: 6px !important;
-        }
+    .logo-preview {
+        max-width: 150px;
+        max-height: 50px;
+        object-fit: contain;
+    }
 
-        .swal2-toast .swal2-title {
-            font-size: 13px !important;
-        }
-    </style>
-@endsection
+    .swal2-toast {
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+        min-width: auto !important;
+        width: 220px !important;
+        line-height: 1.3em !important;
+    }
+
+    .swal2-toast .swal2-icon {
+        width: 24px !important;
+        height: 24px !important;
+        margin-right: 6px !important;
+    }
+
+    .swal2-toast .swal2-title {
+        font-size: 13px !important;
+    }
+</style>
+
 
 @section('content')
     <div class="container-fluid">

@@ -3,307 +3,307 @@
     Ticket #{{ $ticket->ticket_id }} - Support Management
 @endsection
 
-@section('css')
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body {
-            background: #f8f9fa;
-            color: #333;
-        }
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    body {
+        background: #f8f9fa;
+        color: #333;
+    }
 
-        .swal2-toast {
-            font-size: 12px !important;
-            padding: 6px 10px !important;
-            min-width: auto !important;
-            width: 220px !important;
-            line-height: 1.3em !important;
-        }
+    .swal2-toast {
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+        min-width: auto !important;
+        width: 220px !important;
+        line-height: 1.3em !important;
+    }
 
-        .swal2-toast .swal2-icon {
-            width: 24px !important;
-            height: 24px !important;
-            margin-right: 6px !important;
-        }
+    .swal2-toast .swal2-icon {
+        width: 24px !important;
+        height: 24px !important;
+        margin-right: 6px !important;
+    }
 
-        .swal2-toast .swal2-title {
-            font-size: 13px !important;
-        }
+    .swal2-toast .swal2-title {
+        font-size: 13px !important;
+    }
 
-        .page-header {
-            background: #fff;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            border-left: 4px solid #249722;
-        }
+    .page-header {
+        background: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border-left: 4px solid #249722;
+    }
 
-        .card {
-            border-radius: 10px;
-            border: none;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-            margin-bottom: 25px;
-        }
+    .card {
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        margin-bottom: 25px;
+    }
 
-        .card-header {
-            background: #fff;
-            border-bottom: 1px solid #eaeaea;
-            padding: 16px 20px;
-            border-radius: 10px 10px 0 0 !important;
-            font-weight: 600;
-            color: #333;
-        }
+    .card-header {
+        background: #fff;
+        border-bottom: 1px solid #eaeaea;
+        padding: 16px 20px;
+        border-radius: 10px 10px 0 0 !important;
+        font-weight: 600;
+        color: #333;
+    }
 
-        .card-body {
-            padding: 20px;
-        }
+    .card-body {
+        padding: 20px;
+    }
 
+    .ticket-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .info-item {
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 3px solid #249722;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        color: #333;
+        font-weight: 600;
+    }
+
+    .badge-status,
+    .badge-priority {
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .badge-status.open,
+    .badge-priority.high {
+        background: #249722;
+        color: #fff;
+    }
+
+    .badge-status.progress,
+    .badge-priority.medium {
+        background: #ffc107;
+        color: #212529;
+    }
+
+    .badge-status.closed,
+    .badge-priority.low {
+        background: #6c757d;
+        color: #fff;
+    }
+
+    .chat-messages {
+        max-height: 500px;
+        overflow-y: auto;
+        padding: 10px;
+    }
+
+    .message {
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 10px;
+        position: relative;
+    }
+
+    .message-user {
+        font-weight: 600;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .message-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    .message-content {
+        margin-top: 8px;
+        line-height: 1.5;
+    }
+
+    .message-admin {
+        background: #e8f5e8;
+        border-left: 4px solid #249722;
+        margin-left: 40px;
+    }
+
+    .message-customer {
+        background: #f8f9fa;
+        border-left: 4px solid #6c757d;
+        margin-right: 40px;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .chat-input-section {
+        border-top: 1px solid #eaeaea;
+        padding-top: 20px;
+        margin-top: 20px;
+    }
+
+    .chat-input {
+        width: 100%;
+        border-radius: 8px;
+        border: 1.5px solid #cfcfcf;
+        padding: 12px 15px;
+        font-size: 1rem;
+        outline: none;
+        transition: border 0.2s;
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .chat-input:focus {
+        border-color: #249722;
+    }
+
+    .btn-send {
+        background: #249722;
+        color: #fff;
+        padding: 10px 24px;
+        font-weight: 500;
+        border-radius: 6px;
+        border: none;
+        transition: background 0.2s;
+    }
+
+    .btn-send:hover {
+        background: #1e7e1c;
+    }
+
+    .quick-reply-card {
+        margin-top: 20px;
+    }
+
+    .quick-reply-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        padding: 10px 0;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .quick-reply-row:hover {
+        background: #f8f9fa;
+    }
+
+    .quick-reply-row:last-child {
+        border-bottom: none;
+    }
+
+    .btn-quickuse {
+        background: none;
+        border: none;
+        color: #249722;
+        font-weight: 500;
+        text-decoration: underline;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .btn-quickuse:hover {
+        color: #1e7e1c;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-outline-primary {
+        color: #249722;
+        border-color: #249722;
+        font-weight: 500;
+    }
+
+    .btn-outline-primary:hover {
+        background: #249722;
+        border-color: #249722;
+        color: white;
+    }
+
+    .btn-primary {
+        background: #249722;
+        border-color: #249722;
+        font-weight: 500;
+    }
+
+    .btn-primary:hover {
+        background: #1e7e1c;
+        border-color: #1e7e1c;
+    }
+
+    .back-link {
+        color: #249722;
+        text-decoration: none;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 15px;
+    }
+
+    .back-link:hover {
+        color: #1e7e1c;
+        text-decoration: underline;
+    }
+
+    .ticket-description {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 3px solid #249722;
+        margin: 15px 0;
+    }
+
+    @media (max-width: 768px) {
         .ticket-info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .info-item {
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 3px solid #249722;
-        }
-
-        .info-label {
-            font-size: 0.85rem;
-            color: #6c757d;
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
-
-        .info-value {
-            font-size: 1rem;
-            color: #333;
-            font-weight: 600;
-        }
-
-        .badge-status,
-        .badge-priority {
-            border-radius: 20px;
-            padding: 6px 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .badge-status.open,
-        .badge-priority.high {
-            background: #249722;
-            color: #fff;
-        }
-
-        .badge-status.progress,
-        .badge-priority.medium {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .badge-status.closed,
-        .badge-priority.low {
-            background: #6c757d;
-            color: #fff;
-        }
-
-        .chat-messages {
-            max-height: 500px;
-            overflow-y: auto;
-            padding: 10px;
-        }
-
-        .message {
-            margin-bottom: 20px;
-            padding: 15px;
-            border-radius: 10px;
-            position: relative;
-        }
-
-        .message-user {
-            font-weight: 600;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .message-time {
-            font-size: 0.8rem;
-            color: #6c757d;
-        }
-
-        .message-content {
-            margin-top: 8px;
-            line-height: 1.5;
-        }
-
-        .message-admin {
-            background: #e8f5e8;
-            border-left: 4px solid #249722;
-            margin-left: 40px;
-        }
-
-        .message-customer {
-            background: #f8f9fa;
-            border-left: 4px solid #6c757d;
-            margin-right: 40px;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        .chat-input-section {
-            border-top: 1px solid #eaeaea;
-            padding-top: 20px;
-            margin-top: 20px;
-        }
-
-        .chat-input {
-            width: 100%;
-            border-radius: 8px;
-            border: 1.5px solid #cfcfcf;
-            padding: 12px 15px;
-            font-size: 1rem;
-            outline: none;
-            transition: border 0.2s;
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .chat-input:focus {
-            border-color: #249722;
-        }
-
-        .btn-send {
-            background: #249722;
-            color: #fff;
-            padding: 10px 24px;
-            font-weight: 500;
-            border-radius: 6px;
-            border: none;
-            transition: background 0.2s;
-        }
-
-        .btn-send:hover {
-            background: #1e7e1c;
-        }
-
-        .quick-reply-card {
-            margin-top: 20px;
-        }
-
-        .quick-reply-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #eee;
-            padding: 10px 0;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .quick-reply-row:hover {
-            background: #f8f9fa;
-        }
-
-        .quick-reply-row:last-child {
-            border-bottom: none;
-        }
-
-        .btn-quickuse {
-            background: none;
-            border: none;
-            color: #249722;
-            font-weight: 500;
-            text-decoration: underline;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        .btn-quickuse:hover {
-            color: #1e7e1c;
+            grid-template-columns: 1fr;
         }
 
         .action-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+            flex-direction: column;
         }
 
-        .btn-outline-primary {
-            color: #249722;
-            border-color: #249722;
-            font-weight: 500;
+        .message-admin,
+        .message-customer {
+            margin-left: 0;
+            margin-right: 0;
         }
+    }
+</style>
 
-        .btn-outline-primary:hover {
-            background: #249722;
-            border-color: #249722;
-            color: white;
-        }
-
-        .btn-primary {
-            background: #249722;
-            border-color: #249722;
-            font-weight: 500;
-        }
-
-        .btn-primary:hover {
-            background: #1e7e1c;
-            border-color: #1e7e1c;
-        }
-
-        .back-link {
-            color: #249722;
-            text-decoration: none;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            margin-bottom: 15px;
-        }
-
-        .back-link:hover {
-            color: #1e7e1c;
-            text-decoration: underline;
-        }
-
-        .ticket-description {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 3px solid #249722;
-            margin: 15px 0;
-        }
-
-        @media (max-width: 768px) {
-            .ticket-info-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
-
-            .message-admin,
-            .message-customer {
-                margin-left: 0;
-                margin-right: 0;
-            }
-        }
-    </style>
-@endsection
 
 @section('content')
     <div class="container-fluid py-4 px-md-4">
@@ -644,6 +644,9 @@
 
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         function useQuickReply(content) {

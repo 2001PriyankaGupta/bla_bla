@@ -2,156 +2,157 @@
 @section('title')
     Fare & Promo Management
 @endsection
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<style>
+    :root {
+        --primary-color: #249722;
+        --primary-light: #e8f5e8;
+        --primary-dark: #1e7a1c;
+        --success-color: #28a745;
+        --danger-color: #dc3545;
+        --warning-color: #ffc107;
+        --info-color: #17a2b8;
+    }
 
-@section('css')
-    <style>
-        :root {
-            --primary-color: #249722;
-            --primary-light: #e8f5e8;
-            --primary-dark: #1e7a1c;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-            --warning-color: #ffc107;
-            --info-color: #17a2b8;
-        }
+    .card {
+        border: none;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
 
-        .card {
-            border: none;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            border-radius: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
+    .card-header {
+        border-radius: 0.5rem 0.5rem 0 0 !important;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+    }
 
-        .card-header {
-            border-radius: 0.5rem 0.5rem 0 0 !important;
-            padding: 1rem 1.25rem;
-            font-weight: 600;
-        }
+    .bg-primary {
+        background-color: var(--primary-color) !important;
+    }
 
-        .bg-primary {
-            background-color: var(--primary-color) !important;
-        }
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
 
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+        border-color: var(--primary-dark);
+    }
 
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-            border-color: var(--primary-dark);
-        }
+    .btn-success {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
 
-        .btn-success {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
+    .btn-success:hover {
+        background-color: var(--primary-dark);
+        border-color: var(--primary-dark);
+    }
 
-        .btn-success:hover {
-            background-color: var(--primary-dark);
-            border-color: var(--primary-dark);
-        }
+    .badge.bg-primary {
+        background-color: var(--primary-color) !important;
+    }
 
-        .badge.bg-primary {
-            background-color: var(--primary-color) !important;
-        }
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        color: #5a5c69;
+    }
 
-        .table th {
-            border-top: none;
-            font-weight: 600;
-            color: #5a5c69;
-        }
+    .table>:not(caption)>*>* {
+        padding: 0.75rem 0.6rem;
+    }
 
-        .table>:not(caption)>*>* {
-            padding: 0.75rem 0.6rem;
-        }
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(36, 151, 34, 0.25);
+    }
 
-        .form-control:focus,
-        .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(36, 151, 34, 0.25);
-        }
+    .form-check-input:checked {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
 
-        .form-check-input:checked {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
+    .page-title {
+        color: #5a5c69;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid #e3e6f0;
+        padding-bottom: 0.5rem;
+    }
 
-        .page-title {
-            color: #5a5c69;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid #e3e6f0;
-            padding-bottom: 0.5rem;
-        }
+    .section-divider {
+        border-top: 2px solid #e3e6f0;
+        margin: 2rem 0;
+    }
 
-        .section-divider {
-            border-top: 2px solid #e3e6f0;
-            margin: 2rem 0;
-        }
+    .action-buttons .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
 
-        .action-buttons .btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
-        }
+    .status-badge {
+        font-size: 0.75rem;
+    }
 
-        .status-badge {
-            font-size: 0.75rem;
-        }
+    .promo-code-badge {
+        font-size: 0.8rem;
+    }
 
-        .promo-code-badge {
-            font-size: 0.8rem;
-        }
+    .usage-progress {
+        height: 6px;
+        margin-top: 5px;
+    }
 
-        .usage-progress {
-            height: 6px;
-            margin-top: 5px;
-        }
+    .expired {
+        color: var(--danger-color);
+        font-weight: 600;
+    }
 
-        .expired {
-            color: var(--danger-color);
-            font-weight: 600;
-        }
+    .expiring-soon {
+        color: var(--warning-color);
+        font-weight: 600;
+    }
 
-        .expiring-soon {
-            color: var(--warning-color);
-            font-weight: 600;
-        }
+    .stat-card {
+        border-left: 4px solid var(--primary-color);
+    }
 
-        .stat-card {
-            border-left: 4px solid var(--primary-color);
-        }
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+    }
 
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
+    .stat-label {
+        font-size: 0.875rem;
+        color: #858796;
+    }
 
-        .stat-label {
-            font-size: 0.875rem;
-            color: #858796;
-        }
+    .swal2-toast {
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+        min-width: auto !important;
+        width: 220px !important;
+        line-height: 1.3em !important;
+    }
 
-        .swal2-toast {
-            font-size: 12px !important;
-            padding: 6px 10px !important;
-            min-width: auto !important;
-            width: 220px !important;
-            line-height: 1.3em !important;
-        }
+    .swal2-toast .swal2-icon {
+        width: 24px !important;
+        height: 24px !important;
+        margin-right: 6px !important;
+    }
 
-        .swal2-toast .swal2-icon {
-            width: 24px !important;
-            height: 24px !important;
-            margin-right: 6px !important;
-        }
+    .swal2-toast .swal2-title {
+        font-size: 13px !important;
+    }
+</style>
 
-        .swal2-toast .swal2-title {
-            font-size: 13px !important;
-        }
-    </style>
-@endsection
 
 @section('content')
     <div class="container-fluid">
@@ -168,7 +169,8 @@
                 <div class="card">
                     <div class="card-header text-white d-flex justify-content-between align-items-center"
                         style="background-color: #e0e3e0;">
-                        <h5 class="card-title mb-0" style="color: black;"><i class="fas fa-table me-2"></i>Fare Configuration
+                        <h5 class="card-title mb-0" style="color: black;"><i class="fas fa-table me-2"></i>Fare
+                            Configuration
                         </h5>
                         <span class="badge bg-light text-dark">
                             <i class="fas fa-info-circle me-1"></i>Current Rates
