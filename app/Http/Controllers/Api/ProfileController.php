@@ -17,7 +17,9 @@ use Illuminate\Support\Facades\Log;
 class ProfileController extends Controller
 {
 
-   public function updateProfile(Request $request)
+
+    // Update profile details
+    public function updateProfile(Request $request)
     {
         try {
             $user = JWTAuth::parseToken()->authenticate();
@@ -95,6 +97,7 @@ class ProfileController extends Controller
     }
 
 
+    // Get profile details  
     public function getProfile()
     {
         try {
