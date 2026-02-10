@@ -332,6 +332,61 @@
                     </div>
                 </div>
 
+                <!-- Seat Layout Card -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Seat Availability Status</h6>
+                        <div>
+                            @php
+                                $confirmedSeatsCount = $ride->bookings->where('status', 'confirmed')->sum('seats_booked');
+                                $pendingSeatsCount = $ride->bookings->where('status', 'pending')->sum('seats_booked');
+                                $availableSeatsCount = $ride->total_seats - ($confirmedSeatsCount + $pendingSeatsCount);
+                            @endphp
+                            <span class="badge bg-danger me-1">{{ $confirmedSeatsCount }} Booked</span>
+                            <span class="badge bg-warning text-dark me-1">{{ $pendingSeatsCount }} Pending</span>
+                            <span class="badge bg-success">{{ $availableSeatsCount }} Free</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap justify-content-center">
+                            @for ($i = 1; $i <= $ride->total_seats; $i++)
+                                @php
+                                    $seatStatus = 'free';
+                                    $seatColor = 'text-success';
+                                    $badgeColor = 'bg-success';
+                                    $statusText = 'Free';
+                                    
+                                    if ($i <= $confirmedSeatsCount) {
+                                        $seatStatus = 'confirmed';
+                                        $seatColor = 'text-danger';
+                                        $badgeColor = 'bg-danger';
+                                        $statusText = 'Booked';
+                                    } elseif ($i <= ($confirmedSeatsCount + $pendingSeatsCount)) {
+                                        $seatStatus = 'pending';
+                                        $seatColor = 'text-warning';
+                                        $badgeColor = 'bg-warning text-dark';
+                                        $statusText = 'Pending';
+                                    }
+                                @endphp
+                                <div class="text-center mx-2 mb-3" style="width: 60px;">
+                                    <div class="mb-1">
+                                        <i class="fas fa-chair fa-2x {{ $seatColor }}"></i>
+                                    </div>
+                                    <div class="text-dark small fw-bold mb-1">Seat {{ $i }}</div>
+                                    <span class="badge {{ $badgeColor }} rounded-pill" style="font-size: 10px;">
+                                        {{ $statusText }}
+                                    </span>
+                                </div>
+                            @endfor
+                        </div>
+                        <div class="mt-3 text-center small text-muted border-top pt-3 d-flex justify-content-center gap-3">
+                            <div><i class="fas fa-circle text-success me-1"></i> Available</div>
+                            <div><i class="fas fa-circle text-warning me-1"></i> Pending Review</div>
+                            <div><i class="fas fa-circle text-danger me-1"></i> Confirmed Booked</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Bookings Card -->
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">

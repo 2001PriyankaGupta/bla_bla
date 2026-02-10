@@ -82,6 +82,20 @@
                 User Management
             </a>
         </li>
+         <li class="{{ request()->routeIs('admin.cars.*') ? 'mm-active' : '' }}">
+            <a href="{{ route('admin.cars.index') }}"
+                class="waves-effect {{ request()->routeIs('admin.cars.*') ? 'active-link' : '' }}">
+                <i class="fas fa-car"></i>
+                Car Management
+            </a>
+        </li>
+        <li class="{{ request()->routeIs('admin.bookings.*') ? 'mm-active' : '' }}">
+            <a href="{{ route('admin.bookings.index') }}"
+                class="waves-effect {{ request()->routeIs('admin.bookings.*') ? 'active-link' : '' }}">
+                <i class="fas fa-calendar-check"></i>
+                Booking Management
+            </a>
+        </li>
         <li class="{{ request()->routeIs('admin.rides.*') ? 'mm-active' : '' }}">
             <a href="{{ route('admin.rides.index') }}"
                 class="waves-effect {{ request()->routeIs('admin.rides.*') ? 'active-link' : '' }}">
@@ -89,6 +103,7 @@
                 Ride Management
             </a>
         </li>
+       
         <li class="{{ request()->routeIs('admin.fare-promo.*') ? 'mm-active' : '' }}">
             <a href="{{ route('admin.fare-promo.index') }}"
                 class="waves-effect {{ request()->routeIs('admin.fare-promo.*') ? 'active-link' : '' }}">

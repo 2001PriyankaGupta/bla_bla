@@ -13,6 +13,8 @@ use App\Http\Controllers\admin\SupportTicketController;
 use App\Http\Controllers\admin\FaqController;
 use App\Http\Controllers\admin\QuickReplyTemplateController;
 use App\Http\Controllers\admin\PaymentController;
+use App\Http\Controllers\admin\CarController;
+use App\Http\Controllers\admin\BookingController;
 
 // Public admin auth routes
 Route::controller(AuthController::class)->group(function () {
@@ -70,6 +72,26 @@ Route::middleware(['admin'])->group(function () {
             
             Route::delete('/{ride}', [RideController::class, 'destroy_rides'])->name('destroy');
         });
+
+        // Car Management Routes
+        Route::prefix('cars')->name('cars.')->group(function () {
+            Route::get('/', [CarController::class, 'index'])->name('index');
+            Route::get('/create', [CarController::class, 'create'])->name('create');
+            Route::post('/', [CarController::class, 'store'])->name('store');
+            Route::get('/{car}/edit', [CarController::class, 'edit'])->name('edit');
+            Route::put('/{car}', [CarController::class, 'update'])->name('update');
+            Route::delete('/{car}', [CarController::class, 'destroy'])->name('destroy');
+            Route::post('/{car}/status', [CarController::class, 'updateStatus'])->name('update-status');
+        });
+
+        // Booking Management Routes
+        Route::prefix('bookings')->name('bookings.')->group(function () {
+            Route::get('/', [BookingController::class, 'index'])->name('index');
+            Route::post('/{booking}/status', [BookingController::class, 'updateStatus'])->name('update-status');
+            Route::delete('/{booking}', [BookingController::class, 'destroy'])->name('destroy');
+        });
+        Route::post('/cars/{car}/status', [CarController::class, 'updateStatus'])->name('cars.status');
+        Route::get('/cars/{car}', [CarController::class, 'show'])->name('cars.show');
 
         // routes/web.php
 

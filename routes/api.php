@@ -23,7 +23,7 @@ Route::prefix('auth')->group(function () {
 // Public ride search routes
 Route::post('/search-ride', [RideController::class, 'searchRides']);
 Route::get('/flexible-search', [RideController::class, 'flexibleSearch']);
-Route::get('/{rideId}/seats', [RideController::class, 'getAvailableSeats']);
+Route::get('/{id}/seats', [RideController::class, 'getRideSeats']);
 
 // Public trip details
 Route::get('/trip/{id}', [RideController::class, 'getTripDetails']);

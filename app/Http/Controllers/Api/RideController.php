@@ -438,102 +438,6 @@ class RideController extends Controller
         }
     }
 
-    // public function searchRides(Request $request)
-    // {
-    //     try {
-    //         $validator = Validator::make($request->all(), [
-    //             'from' => 'required|string|max:255',
-    //             'to' => 'required|string|max:255',
-    //             'departing' => 'required|date',
-    //             'passengers' => 'required|integer|min:1'
-    //         ]);
-
-    //         if ($validator->fails()) {
-    //             return response()->json([
-    //                 'status' => false,
-    //                 'error' => $validator->errors()->first()
-    //             ], 422);
-    //         }
-
-    //         $from = $request->from;
-    //         $to = $request->to;
-    //         $departing = $request->departing;
-    //         $passengers = $request->passengers;
-
-    //         $departingDate = Carbon::parse($departing);
-    //         $startOfDay = $departingDate->startOfDay()->toDateTimeString();
-    //         $endOfDay = $departingDate->endOfDay()->toDateTimeString();
-
-    //         Log::info('=== SEARCH PARAMETERS ===');
-    //         Log::info('From: ' . $from);
-    //         Log::info('To: ' . $to);
-    //         Log::info('Date Range: ' . $startOfDay . ' to ' . $endOfDay);
-    //         Log::info('Passengers: ' . $passengers);
-    //         Log::info('Current Time: ' . now());
-
-    //         // Check database directly
-    //         $allRides = Ride::all();
-    //         Log::info('=== ALL RIDES IN DATABASE ===');
-    //         foreach ($allRides as $ride) {
-    //             Log::info('Ride ID: ' . $ride->id . ' | From: ' . $ride->pickup_point . ' | To: ' . $ride->drop_point . ' | Date: ' . $ride->date_time . ' | Seats: ' . $ride->total_seats);
-    //         }
-
-    //         $rides = Ride::with(['car', 'car.user'])
-    //                     ->where(function($query) use ($from) {
-    //                         $query->where('pickup_point', 'like', '%' . $from . '%')
-    //                             ->orWhereRaw('LOWER(pickup_point) LIKE ?', ['%' . strtolower($from) . '%']);
-    //                     })
-    //                     ->where(function($query) use ($to) {
-    //                         $query->where('drop_point', 'like', '%' . $to . '%')
-    //                             ->orWhereRaw('LOWER(drop_point) LIKE ?', ['%' . strtolower($to) . '%']);
-    //                     })
-    //                     ->whereBetween('date_time', [$startOfDay, $endOfDay])
-    //                     ->where('total_seats', '>=', $passengers)
-    //                     ->where('date_time', '>', now())
-    //                     ->orderBy('date_time', 'asc')
-    //                     ->get();
-
-    //         Log::info('=== FOUND RIDES COUNT ===');
-    //         Log::info('Count: ' . $rides->count());
-
-    //         if ($rides->isEmpty()) {
-    //             Log::info('=== NO RIDES FOUND ===');
-    //             return response()->json([
-    //                 'status' => true,
-    //                 'message' => 'No rides found for your search criteria',
-    //                 'data' => [],
-    //                 'search_criteria' => [
-    //                     'from' => $from,
-    //                     'to' => $to,
-    //                     'departing' => $departing,
-    //                     'passengers' => $passengers
-    //                 ]
-    //             ]);
-    //         }
-
-    //         Log::info('=== RIDES FOUND SUCCESSFULLY ===');
-    //         return response()->json([
-    //             'status' => true,
-    //             'message' => 'Rides found successfully',
-    //             'data' => $rides,
-    //             'search_criteria' => [
-    //                 'from' => $from,
-    //                 'to' => $to,
-    //                 'departing' => $departing,
-    //                 'passengers' => $passengers
-    //             ]
-    //         ]);
-
-    //     } catch (\Exception $e) {
-    //         Log::error('=== SEARCH ERROR ===');
-    //         Log::error('Error: ' . $e->getMessage());
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
-
     public function searchRides(Request $request)
     {
         try {
@@ -844,6 +748,70 @@ class RideController extends Controller
             Log::error('Trip details error: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
             
+            return response()->json([
+                'status' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    // Seat Layout API for "Book Your Preferred Seat" screen
+    public function getRideSeats($id)
+    {
+        try {
+            $ride = Ride::find($id);
+
+            if (!$ride) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Ride not found'
+                ], 404);
+            }
+
+            // Count booked seats
+            $bookedCount = \App\Models\Booking::where('ride_id', $id)
+                ->whereIn('status', ['pending', 'confirmed'])
+                ->sum('seats_booked');
+            
+            $totalSeats = $ride->total_seats;
+            $availableSeats = $totalSeats - $bookedCount;
+            
+            // Generate virtual seat layout
+            // Logic: Fills seats sequentially from 1 to Total. 
+            // If total=4, booked=1 => [Seat 1: Booked, Seat 2: Available, Seat 3: Available, Seat 4: Available]
+            
+            $seats = [];
+            for ($i = 1; $i <= $totalSeats; $i++) {
+                $status = ($i <= $bookedCount) ? 'booked' : 'available';
+                
+                // Determine seat position (Mock logic for visual)
+                // Assuming standard 4-seater: 1 (Front Left), 2 (Back Left), 3 (Back Middle), 4 (Back Right)
+                // Just for fun/API richness
+                $position = 'Back Seat';
+                if ($i == 1) $position = 'Front Seat';
+                
+                $seats[] = [
+                    'seat_number' => $i,
+                    'status' => $status, // 'available', 'booked', 'selected' (client side)
+                    'price' => $ride->price_per_seat,
+                    'position' => $position
+                ];
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Ride seats retrieved successfully',
+                'data' => [
+                    'ride_id' => $ride->id,
+                    'total_seats' => $totalSeats,
+                    'available_seats_count' => $availableSeats,
+                    'currency' => '₹',
+                    'price_per_seat' => $ride->price_per_seat,
+                    'seats' => $seats
+                ]
+            ]);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Server error: ' . $e->getMessage()
