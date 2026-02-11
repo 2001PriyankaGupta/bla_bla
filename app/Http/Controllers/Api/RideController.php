@@ -50,6 +50,75 @@ class RideController extends Controller
         }
     }
 
+   public function active_rides(Request $request)
+    {
+        try {
+            // Debug log
+            Log::info('Active rides endpoint accessed');
+            
+            // Authenticate user
+            try {
+                $user = JWTAuth::parseToken()->authenticate();
+            } catch (TokenExpiredException | TokenInvalidException | JWTException $e) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Please login first to view rides.'
+                ], 401);
+            }
+
+            Log::info('User authenticated: ' . $user->id);
+
+            // Get current time
+            $now = now();
+            Log::info('Current time: ' . $now);
+
+            // Query active rides - sirf status 'active' aur future wale
+            $rides = Ride::with(['car', 'car.user'])
+                        ->whereHas('car', function($query) use ($user) {
+                            $query->where('user_id', $user->id);
+                        })
+                        ->where('status', 'active') // sirf active status
+                        ->where('date_time', '>', $now) // sirf future rides
+                        ->orderBy('date_time', 'asc')
+                        ->get();
+
+            Log::info('Found ' . $rides->count() . ' active rides');
+
+            // Format rides
+            $formattedRides = $rides->map(function($ride) {
+                return [
+                    'id' => $ride->id,
+                    'from' => $ride->pickup_point,
+                    'to' => $ride->drop_point,
+                    'date_time' => $ride->date_time,
+                    'seats' => $ride->total_seats,
+                    'price' => $ride->price,
+                    'status' => $ride->status,
+                    'car' => $ride->car ? [
+                        'model' => $ride->car->car_model,
+                        'license_plate' => $ride->car->licence_plate,
+                    ] : null
+                ];
+            });
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Active rides fetched successfully',
+                'data' => $formattedRides,
+                'count' => $rides->count()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in active_rides: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to fetch active rides: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try {
@@ -69,7 +138,8 @@ class RideController extends Controller
                 'total_seats' => 'required|integer|min:1',
                 'price_per_seat' => 'required|numeric|min:0',
                 'car_make' => 'required|string|exists:cars,car_make,user_id,' . $user->id, // Fix typo
-                'luggage_allowed' => 'required|boolean'
+                'luggage_allowed' => 'required|boolean',
+                'status' => 'sometimes|in:active,inactive'
             ]);
 
             if ($validator->fails()) {
@@ -99,6 +169,7 @@ class RideController extends Controller
                 'price_per_seat' => $request->price_per_seat,
                 'car_id' => $car->id,
                 'luggage_allowed' => $request->luggage_allowed,
+                'status' => $request->status ?? 'active',
             ]);
 
             $ride->load('car');
@@ -189,7 +260,8 @@ class RideController extends Controller
                 'total_seats' => 'sometimes|integer|min:1',
                 'price_per_seat' => 'sometimes|numeric|min:0',
                 'car_make' => 'sometimes|string|exists:cars,car_make,user_id,' . $user->id, // sometimes for update
-                'luggage_allowed' => 'sometimes|boolean'
+                'luggage_allowed' => 'sometimes|boolean',
+                'status' => 'sometimes|in:active,inactive'
             ]);
 
             if ($validator->fails()) {
@@ -222,6 +294,7 @@ class RideController extends Controller
                 'total_seats' => $request->total_seats ?? $ride->total_seats,
                 'price_per_seat' => $request->price_per_seat ?? $ride->price_per_seat,
                 'luggage_allowed' => $request->luggage_allowed ?? $ride->luggage_allowed,
+                'status' => $request->status ?? $ride->status,
             ]);
 
             $ride->load('car');
@@ -279,58 +352,58 @@ class RideController extends Controller
     }
 
     public function shareRide(Request $request, $id)
-{
-    try {
-        $validator = Validator::make($request->all(), [
-            'share_with' => 'required|array',
-            'share_with.*' => 'email'
-        ]);
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'share_with' => 'required|array',
+                'share_with.*' => 'email'
+            ]);
 
-        if ($validator->fails()) {
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'error' => $validator->errors()->first()
+                ], 422);
+            }
+
+            $ride = Ride::with('car')->find($id);
+            if (!$ride) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Ride not found'
+                ], 404);
+            }
+
+            // Generate shareable link
+            $shareLink = url("/ride/{$id}");
+            
+            // Here you can implement email sending logic
+            // foreach ($request->share_with as $email) {
+            //     Mail::to($email)->send(new RideShareMail($ride, $shareLink));
+            // }
+
             return response()->json([
-                'status' => false,
-                'error' => $validator->errors()->first()
-            ], 422);
-        }
-
-        $ride = Ride::with('car')->find($id);
-        if (!$ride) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Ride not found'
-            ], 404);
-        }
-
-        // Generate shareable link
-        $shareLink = url("/ride/{$id}");
-        
-        // Here you can implement email sending logic
-        // foreach ($request->share_with as $email) {
-        //     Mail::to($email)->send(new RideShareMail($ride, $shareLink));
-        // }
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Ride shared successfully',
-            'data' => [
-                'share_link' => $shareLink,
-                'shared_with' => $request->share_with,
-                'ride_details' => [
-                    'pickup' => $ride->pickup_point,
-                    'drop' => $ride->drop_point,
-                    'date_time' => $ride->date_time,
-                    'price' => $ride->price_per_seat
+                'status' => true,
+                'message' => 'Ride shared successfully',
+                'data' => [
+                    'share_link' => $shareLink,
+                    'shared_with' => $request->share_with,
+                    'ride_details' => [
+                        'pickup' => $ride->pickup_point,
+                        'drop' => $ride->drop_point,
+                        'date_time' => $ride->date_time,
+                        'price' => $ride->price_per_seat
+                    ]
                 ]
-            ]
-        ]);
+            ]);
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Server error: ' . $e->getMessage()
-        ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
     }
-}
 
 
     public function contactDriver(Request $request, $id)
@@ -460,8 +533,8 @@ class RideController extends Controller
             $departing = $request->departing;
             $passengers = $request->passengers;
 
-            // IMPORTANT FIX: सिर्फ date compare करें, time नहीं
-            $departingDate = Carbon::parse($departing)->toDateString(); // "2025-12-01"
+            // Compare only date (ignore time)
+            $departingDate = Carbon::parse($departing)->toDateString();
 
             Log::info('=== SEARCH PARAMETERS ===');
             Log::info('From: ' . $from);
@@ -469,47 +542,39 @@ class RideController extends Controller
             Log::info('Date: ' . $departingDate);
             Log::info('Passengers: ' . $passengers);
 
-            // Check database directly
-            $allRides = Ride::all();
-            Log::info('=== ALL RIDES IN DATABASE ===');
-            foreach ($allRides as $ride) {
-                $rideDate = Carbon::parse($ride->date_time)->toDateString();
-                Log::info('Ride ID: ' . $ride->id . 
-                        ' | From: ' . $ride->pickup_point . 
-                        ' | To: ' . $ride->drop_point . 
-                        ' | Date in DB: ' . $ride->date_time .
-                        ' | Formatted Date: ' . $rideDate);
+            // Define keyword arrays for broader matching
+            $fromKeywords = [];
+            $toKeywords   = [];
+
+            // Example: expand Ghaziabad to include nearby cities
+            if (strtolower($from) === 'ghaziabad') {
+                $fromKeywords = ['ghaziabad', 'noida', 'delhi', 'ncr'];
+            } else {
+                $fromKeywords = [strtolower($from)];
             }
 
-            // FIXED QUERY: Use DATE() function for comparison
-            $rides = Ride::with(['car', 'car.user'])
-                        ->where(function($query) use ($from) {
-                            $fromLower = strtolower($from);
-                            $query->whereRaw('LOWER(pickup_point) LIKE ?', ['%' . $fromLower . '%']);
-                        })
-                        ->where(function($query) use ($to) {
-                            $toLower = strtolower($to);
-                            $query->whereRaw('LOWER(drop_point) LIKE ?', ['%' . $toLower . '%']);
-                        })
-                        ->whereRaw('DATE(date_time) = ?', [$departingDate]) // IMPORTANT FIX
-                        ->where('total_seats', '>=', $passengers)
-                        ->where('date_time', '>', now())
-                        ->orderBy('date_time', 'asc')
-                        ->get();
+            if (strtolower($to) === 'gurgaon' || strtolower($to) === 'gurugram') {
+                $toKeywords = ['gurgaon', 'gurugram'];
+            } else {
+                $toKeywords = [strtolower($to)];
+            }
 
-            // DEBUG: Raw SQL check
+            // Build query
             $query = Ride::with(['car', 'car.user'])
-                        ->where(function($query) use ($from) {
-                            $fromLower = strtolower($from);
-                            $query->whereRaw('LOWER(pickup_point) LIKE ?', ['%' . $fromLower . '%']);
-                        })
-                        ->where(function($query) use ($to) {
-                            $toLower = strtolower($to);
-                            $query->whereRaw('LOWER(drop_point) LIKE ?', ['%' . $toLower . '%']);
-                        })
-                        ->whereRaw('DATE(date_time) = ?', [$departingDate])
-                        ->where('total_seats', '>=', $passengers)
-                        ->where('date_time', '>', now());
+                ->where(function($q) use ($fromKeywords) {
+                    foreach ($fromKeywords as $word) {
+                        $q->orWhereRaw('LOWER(pickup_point) LIKE ?', ['%' . $word . '%']);
+                    }
+                })
+                ->where(function($q) use ($toKeywords) {
+                    foreach ($toKeywords as $word) {
+                        $q->orWhereRaw('LOWER(drop_point) LIKE ?', ['%' . $word . '%']);
+                    }
+                })
+                ->whereRaw('DATE(date_time) = ?', [$departingDate])
+                ->where('total_seats', '>=', $passengers)
+                ->where('date_time', '>', now())
+                ->orderBy('date_time', 'asc');
 
             Log::info('=== SQL QUERY ===');
             Log::info($query->toSql());
@@ -521,16 +586,6 @@ class RideController extends Controller
             Log::info('Count: ' . $rides->count());
 
             if ($rides->isEmpty()) {
-                // Check why no results
-                $fromCount = Ride::whereRaw('LOWER(pickup_point) LIKE ?', ['%' . strtolower($from) . '%'])->count();
-                $toCount = Ride::whereRaw('LOWER(drop_point) LIKE ?', ['%' . strtolower($to) . '%'])->count();
-                $dateCount = Ride::whereRaw('DATE(date_time) = ?', [$departingDate])->count();
-                
-                Log::info('DEBUG - From matches: ' . $fromCount);
-                Log::info('DEBUG - To matches: ' . $toCount);
-                Log::info('DEBUG - Date matches: ' . $dateCount);
-                Log::info('DEBUG - Searching date: ' . $departingDate);
-
                 return response()->json([
                     'status' => true,
                     'message' => 'No rides found for your search criteria',
@@ -540,11 +595,6 @@ class RideController extends Controller
                         'to' => $to,
                         'departing' => $departingDate,
                         'passengers' => $passengers
-                    ],
-                    'debug_info' => [
-                        'from_matches' => $fromCount,
-                        'to_matches' => $toCount,
-                        'date_matches' => $dateCount
                     ]
                 ]);
             }
@@ -633,32 +683,215 @@ class RideController extends Controller
         }
     }
 
+    // public function getTripDetails($id)
+    // {
+    //     try {
+    //         // Pehle booking find karein
+    //         $booking = \App\Models\Booking::with([
+    //             'ride',
+    //             'ride.car',
+    //             'ride.car.user:id,name,profile_picture,phone,email,rating,total_rides',
+    //         ])->find($id);
+
+    //         if (!$booking) {
+    //             return response()->json([
+    //                 'status' => false,
+    //                 'message' => 'Booking not found'
+    //             ], 404);
+    //         }
+
+    //         $ride = $booking->ride;
+
+    //         if (!$ride) {
+    //             return response()->json([
+    //                 'status' => false,
+    //                 'message' => 'Ride not found for this booking'
+    //             ], 404);
+    //         }
+
+    //         // Calculate available seats for this ride
+    //         $bookedSeats = \App\Models\Booking::where('ride_id', $ride->id)
+    //             ->whereIn('status', ['pending', 'confirmed'])
+    //             ->sum('seats_booked');
+            
+    //         $availableSeats = $ride->total_seats - $bookedSeats;
+
+    //         // Format the response with booking information
+    //         $tripDetails = [
+    //             'trip_summary' => [
+    //                 'booking_id' => $booking->id,
+    //                 'booking_status' => $booking->status,
+    //                 'ride_id' => $ride->id,
+    //                 'date' => Carbon::parse($ride->date_time)->format('D, M d'),
+    //                 'departure_time' => Carbon::parse($ride->date_time)->format('h:i A'),
+    //                 'pickup_point' => $ride->pickup_point,
+    //                 'pickup_location' => $ride->pickup_point . ', India',
+    //                 'arrival_time' => Carbon::parse($ride->date_time)->addMinutes(90)->format('h:i A'),
+    //                 'drop_point' => $ride->drop_point,
+    //                 'drop_location' => $ride->drop_point . ', India',
+    //                 'duration' => '1 hr 30 min',
+    //                 'distance' => '25 km',
+    //             ],
+    //             'booking_information' => [
+    //                 'booking_reference' => 'BK-' . str_pad($booking->id, 6, '0', STR_PAD_LEFT),
+    //                 'seats_booked' => $booking->seats_booked,
+    //                 'total_price' => '₹' . number_format($booking->total_price, 2),
+    //                 'booking_status' => ucfirst($booking->status),
+    //                 'booking_date' => Carbon::parse($booking->created_at)->format('M d, Y h:i A'),
+    //                 'special_requests' => $booking->special_requests ?? 'No special requests',
+    //                 'approved_at' => $booking->approved_at ? 
+    //                     Carbon::parse($booking->approved_at)->format('M d, Y h:i A') : 
+    //                     'Not approved yet',
+    //                 'rejection_reason' => $booking->rejection_reason ?? 'N/A',
+    //             ],
+    //             'ride_information' => [
+    //                 'total_seats' => $ride->total_seats,
+    //                 'available_seats' => $availableSeats,
+    //                 'price_per_seat' => '₹' . number_format($ride->price, 2),
+    //                 'your_total_price' => '₹' . number_format($booking->total_price, 2),
+    //                 'luggage_allowed' => $ride->luggage_allowed ? 'Yes' : 'No',
+    //                 'luggage_restrictions' => $ride->luggage_allowed ? 
+    //                     'Medium size luggage allowed (max 15kg)' : 
+    //                     'No luggage allowed',
+    //                 'ride_status' => $ride->status,
+    //             ],
+    //             'driver_info' => [
+    //                 'name' => $ride->car->user->name ?? 'Driver',
+    //                 'profile_picture' => $ride->car->user->profile_picture ?? '/default-avatar.png',
+    //                 'phone' => $ride->car->user->phone ?? 'Not available',
+    //                 'email' => $ride->car->user->email ?? 'Not available',
+    //                 'rating' => $ride->car->user->rating ?? 4.5,
+    //                 'total_rides' => $ride->car->user->total_rides ?? 50,
+    //                 'verification_status' => $ride->car->license_verified === 'verified' ? 
+    //                     'Verified Profile - Rarely Cancels Rides' : 
+    //                     'Unverified Profile',
+    //                 'driver_note' => "I'm a friendly driver and enjoy chatting with passengers. Feel free to ask me anything about the city!",
+    //                 'languages' => ['Hindi', 'English'],
+    //                 'member_since' => Carbon::parse($ride->car->user->created_at ?? now())->format('M Y'),
+    //             ],
+    //             'car_details' => [
+    //                 'make' => $ride->car->car_make,
+    //                 'model' => $ride->car->car_model,
+    //                 'year' => $ride->car->car_year,
+    //                 'color' => $ride->car->car_color,
+    //                 'license_plate' => $ride->car->licence_plate,
+    //                 'photo' => $ride->car->car_photo ?? '/default-car.jpg',
+    //                 'license_verified' => $ride->car->license_verified,
+    //                 'verification_notes' => $ride->car->verification_notes,
+    //             ],
+    //             'pickup_drop_preferences' => [
+    //                 'pickup_from_home' => true,
+    //                 'pickup_notes' => 'Changes as per requirement',
+    //                 'drop_at_home' => true,
+    //                 'drop_notes' => 'Changes as per requirement',
+    //             ],
+    //             'booking_policy' => [
+    //                 'approval_required' => true,
+    //                 'smoking_allowed' => false,
+    //                 'pets_allowed' => false,
+    //                 'music_allowed' => true,
+    //                 'ac_available' => true,
+    //                 'additional_rules' => [
+    //                     'No smoking',
+    //                     'No pets',
+    //                     'Driver approval required',
+    //                     'Be punctual',
+    //                     'Carry ID proof',
+    //                 ]
+    //             ],
+    //             'contact_options' => [
+    //                 'can_contact_driver' => true,
+    //                 'share_ride_option' => true,
+    //                 'emergency_contact' => '+91 9876543210',
+    //             ],
+    //             'additional_features' => [
+    //                 'has_wifi' => false,
+    //                 'has_charging_port' => true,
+    //                 'has_camera' => true,
+    //                 'safety_rating' => 4.5,
+    //                 'insurance_coverage' => 'Yes',
+    //             ],
+    //             'booking_timeline' => [
+    //                 'booked_on' => Carbon::parse($booking->created_at)->format('M d, Y h:i A'),
+    //                 'approved_on' => $booking->approved_at ? 
+    //                     Carbon::parse($booking->approved_at)->format('M d, Y h:i A') : 
+    //                     'Pending',
+    //                 'ride_date' => Carbon::parse($ride->date_time)->format('M d, Y'),
+    //             ]
+    //         ];
+
+    //         return response()->json([
+    //             'status' => true,
+    //             'message' => 'Trip details with booking information retrieved successfully',
+    //             'data' => $tripDetails
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         Log::error('Trip details error: ' . $e->getMessage());
+    //         Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Server error: ' . $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
     public function getTripDetails($id)
     {
         try {
-            // Find the ride with all related data - SIMPLIFIED QUERY
-            $ride = Ride::with([
-                'car',
-                'car.user:id,name,profile_picture,phone,email,rating,total_rides',
+            // Pehle booking find karein with all required relationships
+            $booking = \App\Models\Booking::with([
+                'ride',
+                'ride.car',
+                'ride.car.user:id,name,profile_picture,phone,email,rating,total_rides',
+                'user:id,name,profile_picture,phone,email,gender', // Passenger details
             ])->find($id);
+
+            if (!$booking) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Booking not found'
+                ], 404);
+            }
+
+            $ride = $booking->ride;
 
             if (!$ride) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Trip not found'
+                    'message' => 'Ride not found for this booking'
                 ], 404);
             }
 
-            // Calculate available seats
-            $bookedSeats = \App\Models\Booking::where('ride_id', $id)
+            // Calculate available seats for this ride
+            $bookedSeats = \App\Models\Booking::where('ride_id', $ride->id)
                 ->whereIn('status', ['pending', 'confirmed'])
                 ->sum('seats_booked');
             
             $availableSeats = $ride->total_seats - $bookedSeats;
 
-            // Format the response
+            // Get co-passengers for this ride (excluding current passenger)
+            $coPassengers = \App\Models\Booking::with(['user:id,name,profile_picture,gender'])
+                ->where('ride_id', $ride->id)
+                ->where('id', '!=', $booking->id) // Exclude current booking
+                ->whereIn('status', ['pending', 'confirmed'])
+                ->get()
+                ->map(function($coBooking) {
+                    return [
+                        'name' => $coBooking->user->name ?? 'Passenger',
+                        'profile_picture' => $coBooking->user->profile_picture ?? '/default-avatar.png',
+                        'gender' => $coBooking->user->gender ?? 'Not specified',
+                        'seats_booked' => $coBooking->seats_booked,
+                        'booking_status' => $coBooking->status,
+                    ];
+                });
+
+            // Format the response with booking information
             $tripDetails = [
                 'trip_summary' => [
+                    'booking_id' => $booking->id,
+                    'booking_status' => $booking->status,
                     'ride_id' => $ride->id,
                     'date' => Carbon::parse($ride->date_time)->format('D, M d'),
                     'departure_time' => Carbon::parse($ride->date_time)->format('h:i A'),
@@ -670,15 +903,58 @@ class RideController extends Controller
                     'duration' => '1 hr 30 min',
                     'distance' => '25 km',
                 ],
+                'booking_information' => [
+                    'booking_reference' => 'BK-' . str_pad($booking->id, 6, '0', STR_PAD_LEFT),
+                    'seats_booked' => $booking->seats_booked,
+                    'total_price' => '₹' . number_format($booking->total_price, 2),
+                    'booking_status' => ucfirst($booking->status),
+                    'booking_date' => Carbon::parse($booking->created_at)->format('M d, Y h:i A'),
+                    'special_requests' => $booking->special_requests ?? 'No special requests',
+                    'approved_at' => $booking->approved_at ? 
+                        Carbon::parse($booking->approved_at)->format('M d, Y h:i A') : 
+                        'Not approved yet',
+                    'rejection_reason' => $booking->rejection_reason ?? 'N/A',
+                ],
+                
+                // PASSENGER INFORMATION SECTION
+                'passenger_info' => [
+                    'id' => $booking->user_id,
+                    'name' => $booking->user->name ?? 'Passenger',
+                    'profile_picture' => $booking->user->profile_picture ?? '/default-avatar.png',
+                    'phone' => $booking->user->phone ?? 'Not available',
+                    'email' => $booking->user->email ?? 'Not available',
+                    'gender' => $booking->user->gender ?? 'Not specified',
+                    'age' => $booking->user->date_of_birth ? 
+                        Carbon::parse($booking->user->date_of_birth)->age : 
+                        'Not specified',
+                    'emergency_contact' => $booking->user->emergency_contact ?? 'Not available',
+                    'booking_role' => 'Primary Passenger',
+                    'verification_status' => 'Verified Passenger',
+                    'passenger_note' => "I'm a punctual passenger who respects driver's time and rules.",
+                    'languages' => ['Hindi', 'English'],
+                    'member_since' => Carbon::parse($booking->user->created_at ?? now())->format('M Y'),
+                    'total_bookings' => \App\Models\Booking::where('user_id', $booking->user_id)
+                        ->whereIn('status', ['completed'])
+                        ->count(),
+                ],
+                
+                // CO-PASSENGERS INFORMATION
+                'co_passengers' => [
+                    'total_co_passengers' => count($coPassengers),
+                    'total_co_passenger_seats' => $coPassengers->sum('seats_booked'),
+                    'list' => $coPassengers,
+                ],
+                
                 'ride_information' => [
                     'total_seats' => $ride->total_seats,
                     'available_seats' => $availableSeats,
-                    'price_per_seat' => '₹' . number_format($ride->price_per_seat, 2),
-                    'total_price_2_seats' => '₹' . number_format($ride->price_per_seat * 2, 2),
+                    'price_per_seat' => '₹' . number_format($ride->price, 2),
+                    'your_total_price' => '₹' . number_format($booking->total_price, 2),
                     'luggage_allowed' => $ride->luggage_allowed ? 'Yes' : 'No',
                     'luggage_restrictions' => $ride->luggage_allowed ? 
                         'Medium size luggage allowed (max 15kg)' : 
                         'No luggage allowed',
+                    'ride_status' => $ride->status,
                 ],
                 'driver_info' => [
                     'name' => $ride->car->user->name ?? 'Driver',
@@ -728,6 +1004,7 @@ class RideController extends Controller
                     'can_contact_driver' => true,
                     'share_ride_option' => true,
                     'emergency_contact' => '+91 9876543210',
+                    'passenger_emergency_contact' => $booking->user->emergency_contact ?? 'Not available',
                 ],
                 'additional_features' => [
                     'has_wifi' => false,
@@ -735,12 +1012,40 @@ class RideController extends Controller
                     'has_camera' => true,
                     'safety_rating' => 4.5,
                     'insurance_coverage' => 'Yes',
+                ],
+                'booking_timeline' => [
+                    'booked_on' => Carbon::parse($booking->created_at)->format('M d, Y h:i A'),
+                    'approved_on' => $booking->approved_at ? 
+                        Carbon::parse($booking->approved_at)->format('M d, Y h:i A') : 
+                        'Pending',
+                    'ride_date' => Carbon::parse($ride->date_time)->format('M d, Y'),
+                ],
+                
+                // PASSENGER RIDE PREFERENCES
+                'passenger_preferences' => [
+                    'preferred_seat' => 'Front Seat',
+                    'preferred_temperature' => 'Moderate AC',
+                    'preferred_conversation' => 'Casual',
+                    'special_needs' => $booking->special_requests ?? 'None',
+                    'food_allowed' => true,
+                    'drinks_allowed' => true,
+                ],
+                
+                // PAYMENT INFORMATION FOR PASSENGER
+                'payment_info' => [
+                    'payment_method' => $booking->payment_method ?? 'Cash on Ride',
+                    'payment_status' => $booking->payment_status ?? 'Pending',
+                    'amount_paid' => '₹' . number_format($booking->amount_paid ?? 0, 2),
+                    'amount_due' => '₹' . number_format(($booking->total_price ?? 0) - ($booking->amount_paid ?? 0), 2),
+                    'payment_date' => $booking->payment_date ? 
+                        Carbon::parse($booking->payment_date)->format('M d, Y h:i A') : 
+                        'Not paid yet',
                 ]
             ];
 
             return response()->json([
                 'status' => true,
-                'message' => 'Trip details retrieved successfully',
+                'message' => 'Trip details with booking information retrieved successfully',
                 'data' => $tripDetails
             ]);
 

@@ -62,12 +62,12 @@ class CarController extends Controller
         }
 
         if ($request->hasFile('driver_license_front')) {
-            $path = $request->file('driver_license_front')->store('licenses', 'public');
+            $path = $request->file('driver_license_front')->store('driver_licenses', 'public');
             $input['driver_license_front'] = $path;
         }
 
         if ($request->hasFile('driver_license_back')) {
-            $path = $request->file('driver_license_back')->store('licenses', 'public');
+            $path = $request->file('driver_license_back')->store('driver_licenses', 'public');
             $input['driver_license_back'] = $path;
         }
 
@@ -111,34 +111,58 @@ class CarController extends Controller
 
         $input = $request->all();
 
+        // Keep existing car photo if no new one is uploaded
         if ($request->hasFile('car_photo')) {
+            // Delete old image from storage
             if ($car->car_photo) {
-                Storage::disk('public')->delete($car->car_photo);
+                // Remove storage/ prefix if exists for proper deletion
+                $oldPath = preg_replace('/^\/?storage\//', '', $car->car_photo);
+                Storage::disk('public')->delete($oldPath);
             }
+            // Store new image
             $path = $request->file('car_photo')->store('car_photos', 'public');
             $input['car_photo'] = $path;
+        } else {
+            // Keep the existing car_photo
+            $input['car_photo'] = $car->car_photo;
         }
 
+        // Keep existing driver license front if no new one is uploaded
         if ($request->hasFile('driver_license_front')) {
+            // Delete old image from storage
             if ($car->driver_license_front) {
-                Storage::disk('public')->delete($car->driver_license_front);
+                // Remove storage/ prefix if exists
+                $oldPath = preg_replace('/^\/?storage\//', '', $car->driver_license_front);
+                Storage::disk('public')->delete($oldPath);
             }
-            $path = $request->file('driver_license_front')->store('licenses', 'public');
+            // Store new image
+            $path = $request->file('driver_license_front')->store('driver_licenses', 'public');
             $input['driver_license_front'] = $path;
+        } else {
+            // Keep the existing driver_license_front
+            $input['driver_license_front'] = $car->driver_license_front;
         }
 
+        // Keep existing driver license back if no new one is uploaded
         if ($request->hasFile('driver_license_back')) {
-             if ($car->driver_license_back) {
-                Storage::disk('public')->delete($car->driver_license_back);
+            // Delete old image from storage
+            if ($car->driver_license_back) {
+                // Remove storage/ prefix if exists
+                $oldPath = preg_replace('/^\/?storage\//', '', $car->driver_license_back);
+                Storage::disk('public')->delete($oldPath);
             }
-            $path = $request->file('driver_license_back')->store('licenses', 'public');
+            // Store new image
+            $path = $request->file('driver_license_back')->store('driver_licenses', 'public');
             $input['driver_license_back'] = $path;
+        } else {
+            // Keep the existing driver_license_back
+            $input['driver_license_back'] = $car->driver_license_back;
         }
         
         // Handle verification status change
         if ($input['license_verified'] == 'verified' && $car->license_verified != 'verified') {
-             $input['verified_by'] = auth()->user()->name ?? 'Admin';
-             $input['verified_at'] = now();
+            $input['verified_by'] = auth()->user()->name ?? 'Admin';
+            $input['verified_at'] = now();
         }
 
         $car->update($input);

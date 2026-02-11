@@ -16,12 +16,14 @@ class Ride extends Model
         'total_seats',
         'price_per_seat',
         'car_id',
-        'luggage_allowed'
+        'luggage_allowed',
+        'status'
     ];
 
     protected $casts = [
         'date_time' => 'datetime',
-        'luggage_allowed' => 'boolean'
+        'luggage_allowed' => 'boolean',
+        'status' => 'string'
     ];
 
     /**

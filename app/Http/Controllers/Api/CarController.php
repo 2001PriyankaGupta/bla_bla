@@ -63,7 +63,7 @@ class CarController extends Controller
     }
 
 
-   public function store(Request $request)
+    public function store(Request $request)
     {
         try {
             try {
@@ -105,61 +105,42 @@ class CarController extends Controller
             ]);
             $carData['user_id'] = $user->id;
 
+            // FIXED: Modified uploadImage function
             $uploadImage = function ($file, $folder) {
-                $filename = $folder . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $filename = $folder . '_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                // Store image and get relative path
                 $path = $file->storeAs($folder, $filename, 'public');
-                return Storage::url($path);
+                // Return only the relative path, NOT Storage::url()
+                return $path; // 'car_photos/filename.jpg'
             };
+
+            // Store relative paths in database
             $carData['car_photo'] = $uploadImage($request->file('car_photo'), 'car_photos');
             $carData['driver_license_front'] = $uploadImage($request->file('driver_license_front'), 'driver_licenses');
             $carData['driver_license_back'] = $uploadImage($request->file('driver_license_back'), 'driver_licenses');
 
+            Log::info('Creating car with data:', $carData);
+
             $car = Car::create($carData);
+
+            // Format response with full URLs
+            $carResponse = $this->formatCarResponse($car);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Car added successfully. Driver license verification is pending.',
-                'data' => $car
+                'data' => $carResponse
             ], 201);
 
         } catch (\Exception $e) {
             Log::error('Car registration failed: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'status' => false,
                 'message' => 'Something went wrong: ' . $e->getMessage()
             ], 500);
         }
     }
-
-    // Get single car
-    public function show($id)
-    {
-        try {
-            $user = $this->authenticateUser();
-            
-            $car = Car::where('user_id', $user->id)->find($id);
-
-            if (!$car) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Car not found'
-                ], 404);
-            }
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Car details fetched successfully',
-                'data' => $car
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => $e->getMessage()
-            ], 401);
-        }
-    }
-
     // Update car
     public function update(Request $request, $id)
     {
@@ -214,37 +195,40 @@ class CarController extends Controller
 
             // Reset verification status if important fields are updated
             if ($request->hasAny(['car_make', 'car_model', 'car_year', 'licence_plate'])) {
-                $carData['license_verified'] = 'pending';
                 $carData['verification_notes'] = null;
                 $carData['verified_by'] = null;
                 $carData['verified_at'] = null;
                 $resetVerification = true;
             }
 
-            // Image upload function
+            // FIXED: Modified uploadImage function with proper old image deletion
             $uploadImage = function ($file, $folder, $oldImage = null) {
                 // Delete old image if exists
                 if ($oldImage) {
-                    $oldPath = str_replace('/storage/', '', $oldImage);
-                    if (Storage::disk('public')->exists($oldPath)) {
-                        Storage::disk('public')->delete($oldPath);
-                    }
+                    $this->deleteCarImage($oldImage);
                 }
 
                 $filename = $folder . '_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                // Store image and get relative path
                 $path = $file->storeAs($folder, $filename, 'public');
-                return Storage::url($path);
+                // Return only the relative path
+                return $path; // 'folder/filename.jpg'
             };
 
             // Handle car photo update
             if ($request->hasFile('car_photo')) {
                 $carData['car_photo'] = $uploadImage($request->file('car_photo'), 'car_photos', $car->car_photo);
+                $resetVerification = true;
             }
 
             // Handle driver license front update
             if ($request->hasFile('driver_license_front')) {
-                $carData['driver_license_front'] = $uploadImage($request->file('driver_license_front'), 'driver_licenses', $car->driver_license_front);
-                $carData['license_verified'] = 'pending';
+                $carData['driver_license_front'] = $uploadImage(
+                    $request->file('driver_license_front'), 
+                    'driver_licenses', 
+                    $car->driver_license_front
+                );
+                
                 $carData['verification_notes'] = null;
                 $carData['verified_by'] = null;
                 $carData['verified_at'] = null;
@@ -253,8 +237,12 @@ class CarController extends Controller
 
             // Handle driver license back update
             if ($request->hasFile('driver_license_back')) {
-                $carData['driver_license_back'] = $uploadImage($request->file('driver_license_back'), 'driver_licenses', $car->driver_license_back);
-                $carData['license_verified'] = 'pending';
+                $carData['driver_license_back'] = $uploadImage(
+                    $request->file('driver_license_back'), 
+                    'driver_licenses', 
+                    $car->driver_license_back
+                );
+                
                 $carData['verification_notes'] = null;
                 $carData['verified_by'] = null;
                 $carData['verified_at'] = null;
@@ -262,19 +250,23 @@ class CarController extends Controller
             }
 
             $car->update($carData);
-
+            
             // Refresh car data from database
             $car->refresh();
+
+            // Format response with full URLs
+            $carResponse = $this->formatCarResponse($car);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Car updated successfully.' . 
                             ($resetVerification ? ' License verification status reset to pending.' : ''),
-                'data' => $car
+                'data' => $carResponse
             ]);
 
         } catch (\Exception $e) {
             Log::error('Car update failed: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'status' => false,
                 'message' => 'Something went wrong: ' . $e->getMessage()
@@ -282,7 +274,101 @@ class CarController extends Controller
         }
     }
 
-    // Delete car
+    
+    private function deleteCarImage($imagePath)
+    {
+        if (!$imagePath) {
+            return;
+        }
+        
+        try {
+            // Remove any '/storage/' or 'storage/' prefix
+            $cleanPath = preg_replace('/^\/?storage\//', '', $imagePath);
+            
+            Log::info('Attempting to delete car image: ' . $cleanPath);
+            Log::info('Original path in DB: ' . $imagePath);
+            
+            if (Storage::disk('public')->exists($cleanPath)) {
+                Storage::disk('public')->delete($cleanPath);
+                Log::info('Car image deleted successfully: ' . $cleanPath);
+            } else {
+                Log::warning('Car image not found in storage: ' . $cleanPath);
+                
+                // Try with just the filename
+                $filename = basename($cleanPath);
+                $folders = ['car_photos', 'driver_licenses'];
+                
+                foreach ($folders as $folder) {
+                    $possiblePath = $folder . '/' . $filename;
+                    if (Storage::disk('public')->exists($possiblePath)) {
+                        Storage::disk('public')->delete($possiblePath);
+                        Log::info('Car image deleted from alternative path: ' . $possiblePath);
+                        break;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Error deleting car image: ' . $e->getMessage());
+        }
+    }
+
+   
+    private function formatCarResponse($car)
+    {
+        return [
+            'id' => $car->id,
+            'user_id' => $car->user_id,
+            'car_make' => $car->car_make,
+            'car_model' => $car->car_model,
+            'car_year' => $car->car_year,
+            'car_color' => $car->car_color,
+            'licence_plate' => $car->licence_plate,
+            'car_photo' => $car->car_photo ? Storage::url($car->car_photo) : null,
+            'driver_license_front' => $car->driver_license_front ? Storage::url($car->driver_license_front) : null,
+            'driver_license_back' => $car->driver_license_back ? Storage::url($car->driver_license_back) : null,
+            'verification_status' => $car->verification_status,
+            'verification_notes' => $car->verification_notes,
+            'verified_by' => $car->verified_by,
+            'verified_at' => $car->verified_at,
+            'created_at' => $car->created_at,
+            'updated_at' => $car->updated_at,
+            
+            // Debug info (optional - remove in production)
+            'car_photo_raw' => $car->car_photo,
+            'driver_license_front_raw' => $car->driver_license_front,
+            'driver_license_back_raw' => $car->driver_license_back,
+        ];
+    }
+
+    public function show($id)
+    {
+        try {
+            $user = $this->authenticateUser();
+            
+            $car = Car::where('user_id', $user->id)->find($id);
+
+            if (!$car) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Car not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Car details fetched successfully',
+                'data' => $car
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 401);
+        }
+    }
+
+    
     public function destroy($id)
     {
         try {

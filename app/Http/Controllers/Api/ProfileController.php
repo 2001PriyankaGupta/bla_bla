@@ -19,7 +19,7 @@ class ProfileController extends Controller
 
 
     // Update profile details
-    public function updateProfile(Request $request)
+   public function updateProfile(Request $request)
     {
         try {
             $user = JWTAuth::parseToken()->authenticate();
@@ -48,7 +48,7 @@ class ProfileController extends Controller
         $data = $request->only(['name', 'gender', 'phone']);
 
         if ($request->hasFile('profile_image')) {
-            Log::info('Profile image upload started');
+            Log::info('Profile image upload started for user ID: ' . $user->id);
 
             $file = $request->file('profile_image');
             Log::info('File details:', [
@@ -58,28 +58,63 @@ class ProfileController extends Controller
             ]);
 
             try {
-                // Delete old image
+                // Delete old image - FIXED HERE
                 if ($user->profile_picture) {
-                    $oldImagePath = str_replace('/storage/', '', $user->profile_picture);
-                    Storage::disk('public')->delete($oldImagePath);
-                    Log::info('Old image deleted: ' . $oldImagePath);
+                    // Remove any '/storage/' or 'storage/' prefix
+                    $oldImagePath = preg_replace('/^\/?storage\//', '', $user->profile_picture);
+                    
+                    Log::info('Attempting to delete old image: ' . $oldImagePath);
+                    Log::info('Full old path in DB: ' . $user->profile_picture);
+                    
+                    if (Storage::disk('public')->exists($oldImagePath)) {
+                        Storage::disk('public')->delete($oldImagePath);
+                        Log::info('Old image deleted successfully: ' . $oldImagePath);
+                    } else {
+                        Log::warning('Old image not found in storage: ' . $oldImagePath);
+                        
+                        // Try alternative path without 'profiles/' folder
+                        $altPath = str_replace('profiles/', '', $oldImagePath);
+                        if (Storage::disk('public')->exists($altPath)) {
+                            Storage::disk('public')->delete($altPath);
+                            Log::info('Old image deleted from alternative path: ' . $altPath);
+                        }
+                    }
                 }
 
+                // Generate unique filename
                 $filename = 'profile_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
-
+                
+                // Store image - 'profiles' folder में
                 $imagePath = $file->storeAs('profiles', $filename, 'public');
-                Log::info('Image stored at: ' . $imagePath);
+                Log::info('Image stored at path: ' . $imagePath); // 'profiles/filename.jpg'
 
+                // Verify file exists
                 if (Storage::disk('public')->exists($imagePath)) {
-                    Log::info('File verified to exist in public disk');
+                    Log::info('File verified to exist in storage');
+                    
+                    // Get file info for logging
+                    $fileSize = Storage::disk('public')->size($imagePath);
+                    $fileLastModified = Storage::disk('public')->lastModified($imagePath);
+                    Log::info('File info - Size: ' . $fileSize . ' bytes, Modified: ' . date('Y-m-d H:i:s', $fileLastModified));
                 } else {
                     Log::error('File not found after storage: ' . $imagePath);
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Failed to store image'
+                    ], 500);
                 }
 
-                $data['profile_picture'] = Storage::url($imagePath);
+                // FIXED: Store relative path in database (without '/storage/')
+                // ये 'profiles/filename.jpg' form में store होगा
+                $data['profile_picture'] = $imagePath;
+                
+                // For response, we'll use Storage::url() 
+                $imageUrl = Storage::url($imagePath);
+                Log::info('Image URL for response: ' . $imageUrl);
 
             } catch (\Exception $e) {
                 Log::error('Image upload error: ' . $e->getMessage());
+                Log::error('Stack trace: ' . $e->getTraceAsString());
                 return response()->json([
                     'status' => false,
                     'message' => 'Failed to upload image: ' . $e->getMessage()
@@ -87,12 +122,31 @@ class ProfileController extends Controller
             }
         }
 
+        // Update user data
         $user->update($data);
+        
+        // Refresh user to get updated data
+        $user->refresh();
+        
+        // Prepare response with full URL
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'gender' => $user->gender,
+            'phone' => $user->phone,
+            'email' => $user->email,
+            'profile_picture' => $user->profile_picture ? Storage::url($user->profile_picture) : null,
+            'profile_picture_raw' => $user->profile_picture, // For debugging
+            'updated_at' => $user->updated_at
+        ];
+
+        Log::info('Profile updated successfully for user ID: ' . $user->id);
+        Log::info('User data after update:', $userData);
 
         return response()->json([
             'status' => true,
             'message' => 'Profile updated successfully',
-            'user' => $user
+            'user' => $userData
         ], 200);
     }
 

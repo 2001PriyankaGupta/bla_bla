@@ -70,6 +70,8 @@ Route::middleware(['api_auth'])->group(function () {
     Route::post('rides/{id}', [RideController::class, 'update']);
     Route::delete('rides/{id}', [RideController::class, 'destroy']);
 
+    Route::get('active-rides', [RideController::class, 'active_rides']);
+
     // Booking routes (# Passenger Only)
     Route::post('/trip/{id}/book', [BookingController::class, 'bookRide']);
     Route::post('/booking/{id}/cancel', [BookingController::class, 'cancelBooking']);
