@@ -170,5 +170,7 @@ Route::middleware(['admin'])->group(function () {
         // payment management routes
         Route::prefix('payment')->name('payment.')->group(function () {
             Route::get('/', [PaymentController::class, 'index'])->name('index');
+            Route::get('/export', [PaymentController::class, 'exportCsv'])->name('export');
+            Route::get('/report', [PaymentController::class, 'monthlyReport'])->name('report');
         });
 });

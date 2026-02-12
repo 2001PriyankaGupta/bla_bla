@@ -65,9 +65,36 @@ class BookingController extends Controller
                 ->first();
 
             if ($existingBooking) {
+                // If the booking is pending, return it so the user can pay (Status true, but maybe a message indicating it exists)
+                if ($existingBooking->status === 'pending') {
+                    // Update seats if needed or just return current
+                     // Calculate total price
+                    $totalPrice = $ride->price_per_seat * $existingBooking->seats_booked;
+
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'Pending booking found. Proceeding to payment.',
+                        'data' => [
+                            'booking_id' => $existingBooking->id,
+                            'ride_details' => [
+                                'pickup' => $ride->pickup_point,
+                                'drop' => $ride->drop_point,
+                                'date_time' => $ride->date_time,
+                                'seats_booked' => $existingBooking->seats_booked,
+                                'total_price' => $totalPrice,
+                                'status' => 'pending'
+                            ],
+                            'driver_contact' => [
+                                'name' => $ride->car->user->name ?? 'Driver',
+                                'phone' => $ride->car->user->phone ?? null
+                            ]
+                        ]
+                    ]);
+                }
+
                 return response()->json([
                     'status' => false,
-                    'message' => 'You already have a booking for this ride'
+                    'message' => 'You already have a confirmed booking for this ride'
                 ], 400);
             }
 

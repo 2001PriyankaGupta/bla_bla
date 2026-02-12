@@ -10,14 +10,23 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ReviewController;
 
+use App\Http\Controllers\Api\PaymentController;
+
 Route::get('test', function() {
     return response()->json(['message' => 'API is working']);
+});
+
+Route::post('ping', function() {
+    return response()->json(['message' => 'pong']);
 });
 
 // Public API routes
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AdminAuthController::class, 'register']);
     Route::post('/login', [AdminAuthController::class, 'login']);
+    Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword']);
+    Route::post('/verify-code', [AdminAuthController::class, 'verifyResetCode']);
+    Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
 });
 
 // Public ride search routes
@@ -78,6 +87,9 @@ Route::middleware(['api_auth'])->group(function () {
     # Driver Only
     Route::post('/booking/{id}/status', [BookingController::class, 'updateBookingStatus']);
     Route::get('/my-bookings', [BookingController::class, 'getUserBookings']);
+    
+    // Payment specific routes
+    Route::post('/payment/verify', [PaymentController::class, 'verifyPayment']);
     
     // RIDE CONFIRM SCREEN APIs
     Route::get('/booking/{id}/confirm-details', [BookingController::class, 'getBookingConfirmation']);

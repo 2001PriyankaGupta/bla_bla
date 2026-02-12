@@ -154,9 +154,8 @@ class ReviewController extends Controller
         }
 
         $user = Auth::user();
-        $booking = Booking::with('ride')->find($request->booking_id);
+        $booking = Booking::with('ride.car')->find($request->booking_id); // ✅ Added 'car' relation
 
-        // Check if booking exists
         if (!$booking) {
             return response()->json([
                 'success' => false,
@@ -164,7 +163,17 @@ class ReviewController extends Controller
             ], 404);
         }
 
-        // Check if user is authorized to review this booking
+        // Check if ride is completed
+        if ($booking->status != 'completed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'You can only review completed rides'
+            ], 400);
+        }
+
+        // ✅ Get driver_id from car relation
+        $driver_id = $booking->ride->car->user_id; // Car owner is driver
+        
         if ($request->type == 'driver') {
             // Passenger reviewing driver
             if ($booking->user_id != $user->id) {
@@ -173,23 +182,19 @@ class ReviewController extends Controller
                     'message' => 'You can only review your own bookings as passenger'
                 ], 403);
             }
-            $driver_id = $booking->ride->driver_id;
-            $user_id = $booking->user_id;
-            $reviewer_id = $user_id; // Passenger is reviewer
+            $reviewer_id = $booking->user_id; // Passenger is reviewer
         } else {
             // Driver reviewing passenger
-            if ($booking->ride->driver_id != $user->id) {
+            if ($driver_id != $user->id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Only driver can review passengers'
                 ], 403);
             }
-            $driver_id = $booking->ride->driver_id;
-            $user_id = $booking->user_id;
             $reviewer_id = $driver_id; // Driver is reviewer
         }
 
-        // Check if review already exists for this booking and type
+        // Check if review already exists
         $existingReview = Review::where('booking_id', $request->booking_id)
             ->where('type', $request->type)
             ->first();
@@ -201,34 +206,27 @@ class ReviewController extends Controller
             ], 400);
         }
 
-        // Check if ride is completed
-        if ($booking->status != 'completed') {
-            return response()->json([
-                'success' => false,
-                'message' => 'You can only review completed rides'
-            ], 400);
-        }
-
-        // Create review
-        $review = Review::create([
+        // ✅ Create review - Fixed column mappings
+        $reviewData = [
             'booking_id' => $request->booking_id,
             'type' => $request->type,
             'rating' => $request->rating,
             'comment' => $request->comment,
-            'driver_id' => $driver_id,
-            'user_id' => $user_id, // passenger_id
-            'reviewer_id' => $user->id, // who gave the review
-            // OR use: 'reviewed_by' => $user->id, depending on your column name
-        ]);
+            'driver_id' => $driver_id,           // Who is being reviewed as driver
+            'user_id' => $booking->user_id,      // Who is being reviewed as passenger
+            'reviewer_id' => $user->id,          // Who gave the review
+        ];
+
+        $review = Review::create($reviewData);
 
         // Update user ratings
-        $this->updateUserRatings($driver_id, $user_id);
+        $this->updateUserRatings($driver_id, $booking->user_id);
 
         return response()->json([
             'success' => true,
             'message' => 'Review submitted successfully',
             'review' => $review->load(['passenger:id,name', 'driver:id,name'])
-        ]);
+        ], 201);
     }
 
     

@@ -61,4 +61,9 @@ class Booking extends Model
     {
         return $query->where('status', 'completed');
     }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
+    }
 }

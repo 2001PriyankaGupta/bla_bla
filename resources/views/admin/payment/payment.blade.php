@@ -250,9 +250,9 @@
                         <p class="mb-0 text-muted">Monitor payments, commissions, and transactions</p>
                     </div>
                     <div class="col-md-6 text-md-end">
-                        <button class="btn btn-primary">
+                        <a href="{{ route('admin.payment.report') }}" class="btn btn-primary">
                             <i class="fas fa-download me-2"></i>Generate Monthly Report
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -262,52 +262,41 @@
                 <div class="col-md-3">
                     <div class="stats-card">
                         <div class="stats-label">Total Payouts to Drivers</div>
-                        <div class="stats-number">Rs1,234,567</div>
-
+                        <div class="stats-number">Rs{{ number_format($driverPayouts, 2) }}</div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card">
                         <div class="stats-label">Platform Commission</div>
-                        <div class="stats-number">Rs123,456</div>
-
+                        <div class="stats-number">Rs{{ number_format($platformCommission, 2) }}</div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card">
                         <div class="stats-label">Total Refunds</div>
-                        <div class="stats-number">Rs12,345</div>
-
+                        <div class="stats-number">Rs{{ number_format($totalRefunds, 2) }}</div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card">
                         <div class="stats-label">Tax Collected</div>
-                        <div class="stats-number">Rs6,789</div>
-
+                        <div class="stats-number">Rs{{ number_format($taxCollected, 2) }}</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Filter Section -->
-            <div class="filter-section">
-
-                <div class="filter-options">
-                    <a href="#" class="filter-btn active">All Transactions</a>
-                    <a href="#" class="filter-btn">Completed</a>
-                    <a href="#" class="filter-btn">Refunded</a>
-                    <a href="#" class="filter-btn">Credit Card</a>
-                    <a href="#" class="filter-btn">Cash</a>
-                </div>
-            </div>
+            <!-- Filter Section Removed as per request -->
 
             <!-- Payment Table -->
             <div class="payment-table">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h5 class="mb-0">Transaction History</h5>
-                    <button class="export-btn">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    
+                    <a href="{{ route('admin.payment.export') }}" class="export-btn">
                         <i class="fas fa-file-csv me-2"></i>Export CSV
-                    </button>
+                    </a>
+                </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0" id="paymentTable">
@@ -324,76 +313,106 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @forelse($payments as $payment)
                             <tr>
-                                <td>TXN12345</td>
-                                <td>RD567890</td>
-                                <td>User A</td>
-                                <td>$25.00</td>
-                                <td>Credit Card</td>
-                                <td><span class="status-badge status-completed">Completed</span></td>
-                                <td>2024-07-26</td>
+                                <td>{{ $payment->transaction_id ?? 'TXN-'.$payment->id }}</td>
                                 <td>
-                                    <a href="#" class="action-btn btn-primary" title="View Details">
+                                    @if($payment->booking && $payment->booking->ride)
+                                        RD-{{ $payment->booking->ride->id }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if($payment->user && $payment->user->profile_picture)
+                                            <!-- Assuming profile_picture is a path stored in DB -->
+                                            <img src="{{ asset('storage/' . $payment->user->profile_picture) }}" class="rounded-circle me-2" width="30" height="30" style="object-fit:cover;" alt="Avatar" onerror="this.style.display='none'">
+                                        @endif
+                                        {{ $payment->user ? $payment->user->name : 'Unknown User' }}
+                                    </div>
+                                </td>
+                                <td>Rs{{ number_format($payment->amount, 2) }}</td>
+                                <td>{{ ucfirst($payment->payment_method ?? 'Online') }}</td>
+                                <td>
+                                    @if(strtolower($payment->status) == 'captured' || strtolower($payment->status) == 'completed' || strtolower($payment->status) == 'success')
+                                        <span class="status-badge status-completed">Completed</span>
+                                    @elseif(strtolower($payment->status) == 'refunded')
+                                        <span class="status-badge status-refunded">Refunded</span>
+                                    @elseif(strtolower($payment->status) == 'failed')
+                                        <span class="status-badge bg-danger text-white">Failed</span>
+                                    @else
+                                        <span class="status-badge bg-warning text-dark">{{ ucfirst($payment->status) }}</span>
+                                    @endif
+                                </td>
+                                <td>{{ $payment->created_at->format('M d, Y H:i') }}</td>
+                                <td>
+                                    <button class="action-btn btn-primary view-details-btn" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#paymentDetailsModal"
+                                        data-transaction="{{ $payment->transaction_id ?? 'TXN-'.$payment->id }}"
+                                        data-user="{{ $payment->user ? $payment->user->name : 'N/A' }}"
+                                        data-amount="Rs{{ number_format($payment->amount, 2) }}"
+                                        data-date="{{ $payment->created_at->format('M d, Y H:i') }}"
+                                        data-status="{{ $payment->status }}"
+                                        data-ride="{{ $payment->booking && $payment->booking->ride ? 'RD-'.$payment->booking->ride->id : 'N/A' }}"
+                                        data-method="{{ $payment->payment_method }}"
+                                        title="View Details">
                                         <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="#" class="action-btn btn-outline-primary" title="Download Receipt">
-                                        <i class="fas fa-download"></i>
-                                    </a>
+                                    </button>
                                 </td>
                             </tr>
+                            @empty
                             <tr>
-                                <td>TXN67890</td>
-                                <td>RD512345</td>
-                                <td>User B</td>
-                                <td>$15.50</td>
-                                <td>Cash</td>
-                                <td><span class="status-badge status-completed">Completed</span></td>
-                                <td>2024-07-25</td>
-                                <td>
-                                    <a href="#" class="action-btn btn-primary" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="#" class="action-btn btn-outline-primary" title="Download Receipt">
-                                        <i class="fas fa-download"></i>
-                                    </a>
-                                </td>
+                                <td colspan="8" class="text-center py-4">No payment records found.</td>
                             </tr>
-                            <tr>
-                                <td>TXN23456</td>
-                                <td>RD578901</td>
-                                <td>User C</td>
-                                <td>$30.00</td>
-                                <td>Credit Card</td>
-                                <td><span class="status-badge status-refunded">Refunded</span></td>
-                                <td>2024-07-24</td>
-                                <td>
-                                    <a href="#" class="action-btn btn-primary" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="#" class="action-btn btn-outline-primary" title="Download Receipt">
-                                        <i class="fas fa-download"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>TXN78601</td>
-                                <td>RD512456</td>
-                                <td>User D</td>
-                                <td>$20.75</td>
-                                <td>Cash</td>
-                                <td><span class="status-badge status-completed">Completed</span></td>
-                                <td>2024-07-23</td>
-                                <td>
-                                    <a href="#" class="action-btn btn-primary" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="#" class="action-btn btn-outline-primary" title="Download Receipt">
-                                        <i class="fas fa-download"></i>
-                                    </a>
-                                </td>
-                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Details Modal -->
+        <div class="modal fade" id="paymentDetailsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-bottom-0">
+                        <h5 class="modal-title">Transaction Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="text-center mb-4">
+                            <h3 class="text-primary fw-bold mb-1" id="modalAmount"></h3>
+                            <span class="badge bg-success rounded-pill" id="modalStatus"></span>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="text-muted small">Transaction ID</label>
+                                <p class="fw-bold mb-0" id="modalTxnId"></p>
+                            </div>
+                            <div class="col-6">
+                                <label class="text-muted small">Date & Time</label>
+                                <p class="fw-bold mb-0" id="modalDate"></p>
+                            </div>
+                            <div class="col-6">
+                                <label class="text-muted small">User</label>
+                                <p class="fw-bold mb-0" id="modalUser"></p>
+                            </div>
+                            <div class="col-6">
+                                <label class="text-muted small">Payment Method</label>
+                                <p class="fw-bold mb-0" id="modalMethod"></p>
+                            </div>
+                             <div class="col-12">
+                                <label class="text-muted small">Ride ID</label>
+                                <p class="fw-bold mb-0" id="modalRide"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0">
+                        <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Close</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -445,6 +464,18 @@
                     if (e.key === "Enter" || e.keyCode === 13) {
                         table.search(this.value).draw();
                     }
+                });
+
+                // Handle Modal Data Population
+                $('.view-details-btn').on('click', function() {
+                    const btn = $(this);
+                    $('#modalTxnId').text(btn.data('transaction'));
+                    $('#modalUser').text(btn.data('user'));
+                    $('#modalAmount').text(btn.data('amount'));
+                    $('#modalDate').text(btn.data('date'));
+                    $('#modalStatus').text(btn.data('status'));
+                    $('#modalRide').text(btn.data('ride'));
+                    $('#modalMethod').text(btn.data('method'));
                 });
             });
         </script>

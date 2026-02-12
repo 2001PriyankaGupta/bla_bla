@@ -846,6 +846,7 @@ class RideController extends Controller
                 'ride.car',
                 'ride.car.user:id,name,profile_picture,phone,email,rating,total_rides',
                 'user:id,name,profile_picture,phone,email,gender', // Passenger details
+                'payment' // Eager load payment
             ])->find($id);
 
             if (!$booking) {
@@ -957,6 +958,7 @@ class RideController extends Controller
                     'ride_status' => $ride->status,
                 ],
                 'driver_info' => [
+                    'id' => $ride->car->user->id ?? null,
                     'name' => $ride->car->user->name ?? 'Driver',
                     'profile_picture' => $ride->car->user->profile_picture ?? '/default-avatar.png',
                     'phone' => $ride->car->user->phone ?? 'Not available',
@@ -1033,12 +1035,13 @@ class RideController extends Controller
                 
                 // PAYMENT INFORMATION FOR PASSENGER
                 'payment_info' => [
-                    'payment_method' => $booking->payment_method ?? 'Cash on Ride',
-                    'payment_status' => $booking->payment_status ?? 'Pending',
-                    'amount_paid' => '₹' . number_format($booking->amount_paid ?? 0, 2),
-                    'amount_due' => '₹' . number_format(($booking->total_price ?? 0) - ($booking->amount_paid ?? 0), 2),
-                    'payment_date' => $booking->payment_date ? 
-                        Carbon::parse($booking->payment_date)->format('M d, Y h:i A') : 
+                    'payment_method' => $booking->payment ? ($booking->payment->payment_method ?? 'Online') : 'Cash',
+                    'payment_status' => $booking->payment ? $booking->payment->status : 'Pending',
+                    'amount_paid' => $booking->payment ? '₹' . number_format($booking->payment->amount, 2) : '₹0.00',
+                    'amount_due' => $booking->payment ? '₹0.00' : '₹' . number_format($booking->total_price, 2),
+                    'transaction_id' => $booking->payment ? $booking->payment->transaction_id : 'N/A',
+                    'payment_date' => $booking->payment ? 
+                        Carbon::parse($booking->payment->payment_date)->format('M d, Y h:i A') : 
                         'Not paid yet',
                 ]
             ];
