@@ -13,6 +13,9 @@
         border-radius: 4px;
         object-fit: cover;
     }
+    td{
+        font-size: 12px;
+    }
 
     .swal2-toast {
         font-size: 12px !important;
@@ -537,7 +540,6 @@
                             <th>Email</th>
                             <th>Rides</th>
                             <th>Rating</th>
-                            <th>KYC</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -547,7 +549,7 @@
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ $user->profile_picture ? asset($user->profile_picture) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=249722&color=fff&size=128&bold=true' }}"
+                                        <img src="{{ $user->profile_picture ? asset('storage/' . $user->profile_picture) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=249722&color=fff&size=128&bold=true' }}"
                                             alt="{{ $user->name }}" class="user-avatar me-3">
                                         <div>
                                             <div class="fw-bold">{{ $user->name }}</div>
@@ -563,21 +565,25 @@
                                 </td>
                                 <td>{{ $user->email }}</td>
                                 <td>
-                                    <span class="fw-bold text-primary">{{ rand(50, 200) }}</span>
+                                    <span class="fw-bold text-primary">
+                                        {{ $user->user_type === 'driver' ? $user->rides_count : $user->bookings_count }}
+                                    </span>
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <span class="text-warning me-2">
                                             <i class="fas fa-star"></i>
                                         </span>
-                                        <span class="fw-bold">{{ number_format(rand(40, 50) / 10, 1) }}</span>
+                                        <span class="fw-bold">
+                                            @if($user->user_type === 'driver')
+                                                {{ number_format($user->driver_reviews_avg_rating ?? 0, 1) }}
+                                            @else
+                                                {{ number_format($user->passenger_reviews_avg_rating ?? 0, 1) }}
+                                            @endif
+                                        </span>
                                     </div>
                                 </td>
-                                <td>
-                                    <span class="kyc-verified">
-                                        <i class="fas fa-shield-check me-1"></i>Verified
-                                    </span>
-                                </td>
+                                
                                 <td>
                                     <span class="{{ $user->status === 'active' ? 'status-active' : 'status-inactive' }}">
                                         {{ ucfirst($user->status) }}
@@ -587,19 +593,19 @@
                                     <div class="btn-group">
                                         <a href="{{ route('admin.users.show', $user) }}"
                                             class="btn btn-sm btn-outline-primary action-btn" data-bs-toggle="tooltip"
-                                            title="View Details">
+                                            title="View Details" style="height: 25px;">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <a href="{{ route('admin.users.edit', $user) }}"
                                             class="btn btn-sm btn-outline-secondary action-btn" data-bs-toggle="tooltip"
-                                            title="Edit User">
+                                            title="Edit User" style="height: 25px;">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <form action="{{ route('admin.users.toggle-status', $user) }}" method="POST"
                                             class="d-inline toggle-status-form">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-outline-warning action-btn"
-                                                data-bs-toggle="tooltip" title="Toggle Status">
+                                                data-bs-toggle="tooltip" title="Toggle Status" style="height: 25px;">
                                                 <i class="fas fa-sync-alt"></i>
                                             </button>
                                         </form>
@@ -608,7 +614,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-outline-danger action-btn"
-                                                data-bs-toggle="tooltip" title="Delete User">
+                                                data-bs-toggle="tooltip" title="Delete User" style="height: 25px;">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>

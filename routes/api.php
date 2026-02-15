@@ -9,8 +9,12 @@ use App\Http\Controllers\Api\RideController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\Api\SupportController;
 
 use App\Http\Controllers\Api\PaymentController;
+
+use App\Http\Controllers\Api\SocialAuthController;
+use App\Http\Controllers\Api\NotificationController;
 
 Route::get('test', function() {
     return response()->json(['message' => 'API is working']);
@@ -27,11 +31,12 @@ Route::prefix('auth')->group(function () {
     Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword']);
     Route::post('/verify-code', [AdminAuthController::class, 'verifyResetCode']);
     Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
+    Route::post('/google-login', [SocialAuthController::class, 'googleLogin']);
 });
 
 // Public ride search routes
 Route::post('/search-ride', [RideController::class, 'searchRides']);
-Route::get('/flexible-search', [RideController::class, 'flexibleSearch']);
+@Route::get('/flexible-search', [RideController::class, 'flexibleSearch']);
 Route::get('/{id}/seats', [RideController::class, 'getRideSeats']);
 
 // Public trip details
@@ -44,6 +49,9 @@ Route::post('/trip/{id}/contact', [RideController::class, 'contactDriver']);
 // PUBLIC REVIEWS APIs (No authentication required)
 Route::get('/driver/{id}/reviews', [ReviewController::class, 'getDriverReviews']);
 Route::get('/user/{id}/reviews', [ReviewController::class, 'getUserReviews']);
+
+// Support & FAQ routes (Public)
+Route::get('/faqs', [SupportController::class, 'getFaqs']);
 
  
 
@@ -113,4 +121,16 @@ Route::middleware(['api_auth'])->group(function () {
         Route::delete('/{id}/delete', [ReviewController::class, 'deleteReview']);
         Route::get('/stats', [ReviewController::class, 'getReviewStats']);
     });
+
+    // Support & FAQ routes
+    Route::get('/tickets', [SupportController::class, 'getTickets']);
+    Route::post('/tickets', [SupportController::class, 'createTicket']);
+    Route::get('/tickets/{id}', [SupportController::class, 'getTicketDetails']);
+    Route::post('/tickets/{id}/reply', [SupportController::class, 'replyTicket']);
+
+    // Notification routes
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 });

@@ -69,6 +69,7 @@ Route::middleware(['admin'])->group(function () {
             Route::put('/{ride}/update', [RideController::class, 'update_ride'])->name('update');
             
             Route::put('/{ride}/status', [RideController::class, 'updateStatus'])->name('update-status');
+            Route::post('/{ride}/reminder', [RideController::class, 'sendReminder'])->name('reminder');
             
             Route::delete('/{ride}', [RideController::class, 'destroy_rides'])->name('destroy');
         });

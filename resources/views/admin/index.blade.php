@@ -3,7 +3,6 @@
     Dashboard
 @endsection
 
-@section('css')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -103,7 +102,7 @@
             color: #e84118;
         }
     </style>
-@endsection
+
 
 @section('content')
     <div class="container-fluid mt-3">
@@ -118,44 +117,44 @@
         <div class="quick-actions mb-4">
             <a href="{{ route('admin.rides.index') }}" class="btn btn-primary">View Ride</a>
             <a href="{{ route('admin.support.index') }}" class="btn btn-outline-success">View Pending Tickets</a>
-            <a href="{{ route('admin.fare-promo.index') }}" class="btn btn-outline-success">Adjust Fare</a>
+            <!-- <a href="{{ route('admin.fare-promo.index') }}" class="btn btn-outline-success">Adjust Fare</a> -->
         </div>
 
         <!-- Metrics -->
         <div class="row mb-4">
             <div class="col-lg-2 col-md-4 col-6">
                 <div class="dashboard-card ">
-                    <div class="value">12,543</div>
+                    <div class="value">{{ number_format($totalUsers) }}</div>
                     <div class="label">Total Users</div>
-                    <div class="sub-label">+12%</div>
+                    <div class="sub-label {{ $userGrowth < 0 ? 'text-danger' : '' }}">{{ $userGrowth >= 0 ? '+' : '' }}{{ number_format($userGrowth, 1) }}%</div>
                 </div>
             </div>
             <div class="col-lg-2 col-md-4 col-6">
                 <div class="dashboard-card ">
-                    <div class="value">8,765</div>
+                    <div class="value">{{ number_format($totalRides) }}</div>
                     <div class="label">Total Rides</div>
-                    <div class="sub-label">+8%</div>
+                    <div class="sub-label {{ $rideGrowth < 0 ? 'text-danger' : '' }}">{{ $rideGrowth >= 0 ? '+' : '' }}{{ number_format($rideGrowth, 1) }}%</div>
                 </div>
             </div>
             <div class="col-lg-2 col-md-4 col-6">
                 <div class="dashboard-card ">
-                    <div class="value">Rs25,432</div>
+                    <div class="value">Rs {{ number_format($totalRevenue, 0) }}</div>
                     <div class="label">Total Revenue</div>
-                    <div class="sub-label">+15%</div>
+                    <div class="sub-label {{ $revenueGrowth < 0 ? 'text-danger' : '' }}">{{ $revenueGrowth >= 0 ? '+' : '' }}{{ number_format($revenueGrowth, 1) }}%</div>
                 </div>
             </div>
             <div class="col-lg-3 col-md-4 col-6">
                 <div class="dashboard-card negative ">
-                    <div class="value">Rs1,234</div>
+                    <div class="value">Rs {{ number_format($totalRefunds, 0) }}</div>
                     <div class="label">Total Refunds</div>
-                    <div class="sub-label">-5%</div>
+                    <div class="sub-label">Verified</div>
                 </div>
             </div>
             <div class="col-lg-3 col-md-4 col-6">
                 <div class="dashboard-card ">
-                    <div class="value">12</div>
+                    <div class="value">{{ $pendingComplaints }}</div>
                     <div class="label">Pending Complaints</div>
-                    <div class="sub-label">+2%</div>
+                    <div class="sub-label text-warning">Needs Action</div>
                 </div>
             </div>
         </div>
@@ -193,17 +192,22 @@
 @endsection
 
 @section('scripts')
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Fake Data: Replace with your backend data as needed
-        var rideTrendsLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        var rideTrendsData = [120, 200, 180, 220, 160, 190, 230];
+        var rideTrendsLabels = {!! json_encode($chartLabels) !!};
+        var rideTrendsData = {!! json_encode($chartData) !!};
 
         var peakHoursLabels = ['12AM', '3AM', '6AM', '9AM', '12PM'];
         var peakHoursData = [30, 45, 80, 60, 100];
 
-        var userGrowthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
-        var userGrowthData = [400, 600, 750, 940, 1100];
+        var userGrowthLabels = {!! json_encode($userGrowthLabels) !!};
+        var userGrowthData = {!! json_encode($userGrowthData) !!};
 
         // Ride Trends Line Chart
         new Chart(document.getElementById('rideTrendsChart').getContext('2d'), {

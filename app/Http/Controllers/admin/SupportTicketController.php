@@ -75,8 +75,17 @@ class SupportTicketController extends Controller
             'message' => 'required|string'
         ]);
 
-        // Create ticket reply logic here
-        // You'll need to create a TicketReply model and migration
+        // Create ticket reply logic
+        $ticket->replies()->create([
+            'user_id' => auth()->id(),
+            'message' => $request->message,
+            'is_internal' => $request->has('is_internal') ? $request->is_internal : false,
+        ]);
+
+        // Update ticket status to 'In Progress' if it was 'Open'
+        if ($ticket->status === 'Open') {
+            $ticket->update(['status' => 'In Progress']);
+        }
 
         return back()->with('success', 'Reply sent successfully.');
     }

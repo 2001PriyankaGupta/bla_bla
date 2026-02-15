@@ -22,6 +22,7 @@ class User extends Authenticatable implements JWTSubject
         'user_type',
         'status',
         'locality',
+        'google_id',
     ];
 
     protected $hidden = [
@@ -150,5 +151,14 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->passengerReviews()->avg('rating') ?? 0;
     }
-    
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    public function rides()
+    {
+        return $this->hasManyThrough(Ride::class, Car::class, 'user_id', 'car_id', 'id', 'id');
+    }
 }

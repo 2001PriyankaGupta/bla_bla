@@ -24,7 +24,11 @@ class UserController extends Controller
         $query->where('status', $request->status);
     }
     
-    $users = $query->orderBy('created_at', 'desc')->paginate(10);
+    $users = $query->withCount(['bookings', 'rides'])
+        ->withAvg('driverReviews', 'rating')
+        ->withAvg('passengerReviews', 'rating')
+        ->orderBy('created_at', 'desc')
+        ->paginate(10);
 
     return view('admin.users.index', compact('users'));
 }
@@ -66,8 +70,13 @@ class UserController extends Controller
     /**
      * Display the specified user.
      */
-    public function show(User $user)
+    public function show($id)
     {
+        $user = User::withCount(['bookings', 'rides'])
+            ->withAvg('driverReviews', 'rating')
+            ->withAvg('passengerReviews', 'rating')
+            ->findOrFail($id);
+            
         return view('admin.users.show', compact('user'));
     }
 

@@ -100,7 +100,7 @@
     .info-item {
         display: flex;
         justify-content: between;
-        margin-bottom: 15px;
+        
         padding: 12px 0;
         border-bottom: 1px solid #f1f3f4;
     }
@@ -137,22 +137,7 @@
         box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
     }
 
-    .kyc-badge {
-        padding: 6px 12px;
-        border-radius: 10px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-    .kyc-verified {
-        background: linear-gradient(135deg, #27ae60, #2ecc71);
-        color: white;
-    }
-
-    .kyc-pending {
-        background: linear-gradient(135deg, #f39c12, #f1c40f);
-        color: white;
-    }
+   
 
     .stats-card {
         background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
@@ -335,24 +320,17 @@
             <div class="col-md-4">
                 <!-- User Profile Card -->
                 <div class="user-profile-card text-center">
-                    <img src="{{ $user->profile_picture ? asset($user->profile_picture) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=249722&color=fff&size=128&bold=true' }}"
+                    <img src="{{ $user->profile_picture ? asset('storage/' . $user->profile_picture) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=249722&color=fff&size=128&bold=true' }}"
                         alt="{{ $user->name }}" class="user-avatar-large">
                     <h3 class="mb-2">{{ $user->name }}</h3>
                     <p class="text-muted mb-3">{{ $user->email }}</p>
 
-                    <div class="row mb-4">
-                        <div class="col-6">
-                            <span
-                                class="status-badge {{ $user->status === 'active' ? 'status-active' : 'status-inactive' }}">
-                                <i class="fas {{ $user->status === 'active' ? 'fa-play' : 'fa-pause' }} me-1"></i>
-                                {{ ucfirst($user->status) }}
-                            </span>
-                        </div>
-                        <div class="col-6">
-                            <span class="kyc-badge kyc-verified">
-                                <i class="fas fa-shield-check me-1"></i>Verified
-                            </span>
-                        </div>
+                    <div class="mb-4 text-center">
+                        <span
+                            class="status-badge {{ $user->status === 'active' ? 'status-active' : 'status-inactive' }}">
+                            <i class="fas {{ $user->status === 'active' ? 'fa-play' : 'fa-pause' }} me-1"></i>
+                            {{ ucfirst($user->status) }}
+                        </span>
                     </div>
 
                     <div class="d-grid gap-2">
@@ -375,16 +353,29 @@
 
                 <!-- Statistics Cards -->
                 <div class="stats-card">
-                    <div class="stats-number">{{ rand(50, 200) }}</div>
-                    <div class="stats-label">Total Rides</div>
+                    <div class="stats-number">{{ $user->user_type === 'driver' ? $user->rides_count : $user->bookings_count }}</div>
+                    <div class="stats-label">Total {{ $user->user_type === 'driver' ? 'Rides' : 'Bookings' }}</div>
                 </div>
                 <div class="stats-card">
-                    <div class="stats-number">{{ number_format(rand(40, 50) / 10, 1) }}</div>
+                    <div class="stats-number">
+                        @if($user->user_type === 'driver')
+                            {{ number_format($user->driver_reviews_avg_rating ?? 0, 1) }}
+                        @else
+                            {{ number_format($user->passenger_reviews_avg_rating ?? 0, 1) }}
+                        @endif
+                    </div>
                     <div class="stats-label">Average Rating</div>
                 </div>
                 <div class="stats-card">
-                    <div class="stats-number">{{ rand(100, 500) }}$</div>
-                    <div class="stats-label">Total Spent</div>
+                    <div class="stats-number">
+                        @php
+                            $totalAmount = $user->user_type === 'driver' 
+                                ? \App\Models\Booking::whereIn('ride_id', $user->rides->pluck('id'))->where('status', 'confirmed')->sum('total_price')
+                                : $user->bookings->where('status', 'confirmed')->sum('total_price');
+                        @endphp
+                        {{ number_format($totalAmount, 2) }}
+                    </div>
+                    <div class="stats-label">{{ $user->user_type === 'driver' ? 'Total Earned' : 'Total Spent' }}</div>
                 </div>
             </div>
 
@@ -458,14 +449,7 @@
                             </span>
                         </span>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">KYC Status:</span>
-                        <span class="info-value">
-                            <span class="kyc-badge kyc-verified">
-                                <i class="fas fa-shield-check me-1"></i>Verified
-                            </span>
-                        </span>
-                    </div>
+                    
                 </div>
 
                 <!-- Recent Activity -->

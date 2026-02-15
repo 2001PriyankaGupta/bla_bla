@@ -155,7 +155,7 @@
                                 <label class="form-label">Profile Picture</label>
                                 <div class="avatar-upload" onclick="document.getElementById('profile_picture').click()">
                                     <img id="avatarPreview"
-                                        src="{{ $user->profile_picture ? asset($user->profile_picture) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=249722&color=fff&size=128&bold=true' }}"
+                                        src="{{ $user->profile_picture ? asset('storage/' . $user->profile_picture) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=249722&color=fff&size=128&bold=true' }}"
                                         alt="Avatar Preview" class="avatar-preview">
                                     <div class="upload-text">
                                         <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>

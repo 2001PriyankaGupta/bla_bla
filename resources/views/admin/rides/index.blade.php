@@ -147,7 +147,12 @@
         }
 
         .status-active {
-            background: linear-gradient(135deg, #3498db, #2980b9);
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .status-inactive {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
             color: white;
         }
 
@@ -183,6 +188,23 @@
             background: linear-gradient(135deg, #1e7a1d, #249722);
             transform: translateY(-2px);
         }
+         .swal2-toast {
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+        min-width: auto !important;
+        width: 220px !important;
+        line-height: 1.3em !important;
+    }
+
+    .swal2-toast .swal2-icon {
+        width: 24px !important;
+        height: 24px !important;
+        margin-right: 6px !important;
+    }
+
+    .swal2-toast .swal2-title {
+        font-size: 13px !important;
+    }
 
         .datatable-custom-search {
             background: linear-gradient(135deg, #fff, #f8f9fa);
@@ -234,27 +256,7 @@
         </div>
 
 
-        <!-- Filter Section -->
-        <div class="filter-section">
-            <h5 class="mb-3">Filter Rides</h5>
-            <div class="filter-options">
-                <a href="{{ route('admin.rides.index') }}" class="filter-btn {{ request('status') ? '' : 'active' }}">
-                    All Rides
-                </a>
-                <a href="{{ route('admin.rides.index', ['status' => 'active']) }}"
-                    class="filter-btn {{ request('status') == 'active' ? 'active' : '' }}">
-                    Active
-                </a>
-                <a href="{{ route('admin.rides.index', ['status' => 'completed']) }}"
-                    class="filter-btn {{ request('status') == 'completed' ? 'active' : '' }}">
-                    Completed
-                </a>
-                <a href="{{ route('admin.rides.index', ['status' => 'cancelled']) }}"
-                    class="filter-btn {{ request('status') == 'cancelled' ? 'active' : '' }}">
-                    Cancelled
-                </a>
-            </div>
-        </div>
+       
 
 
         <!-- Rides Table -->
@@ -290,8 +292,8 @@
                                 </td>
                                 <td>
                                     @if ($ride->car)
-                                        <div class="fw-bold">{{ $ride->car->brand }} {{ $ride->car->model }}</div>
-                                        <small class="text-muted">{{ $ride->car->license_plate }}</small>
+                                        <div class="fw-bold">{{ $ride->car->car_make }} {{ $ride->car->car_model }}</div>
+                                        <small class="text-muted">{{ $ride->car->licence_plate }}</small>
                                     @else
                                         <div class="fw-bold text-muted">No Car</div>
                                         <small class="text-muted">N/A</small>

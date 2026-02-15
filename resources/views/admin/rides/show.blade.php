@@ -7,6 +7,23 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
 
 <style>
+     .swal2-toast {
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+        min-width: auto !important;
+        width: 220px !important;
+        line-height: 1.3em !important;
+    }
+
+    .swal2-toast .swal2-icon {
+        width: 24px !important;
+        height: 24px !important;
+        margin-right: 6px !important;
+    }
+
+    .swal2-toast .swal2-title {
+        font-size: 13px !important;
+    }
     .passenger-card {
         border: 1px solid #e3e6f0;
         border-radius: 0.35rem;
@@ -248,9 +265,9 @@
                         @if ($ride->car)
                             <div class="row">
                                 <div class="col-md-4 text-center">
-                                    @if ($ride->car->car_image)
-                                        <img src="{{ asset('storage/' . $ride->car->car_image) }}"
-                                            alt="{{ $ride->car->model }}" class="img-fluid rounded"
+                                    @if ($ride->car->car_photo)
+                                        <img src="{{ asset( 'storage/' . $ride->car->car_photo) }}"
+                                            alt="{{ $ride->car->car_model }}" class="img-fluid rounded"
                                             style="max-height: 150px;">
                                     @else
                                         <div class="bg-light rounded d-flex align-items-center justify-content-center"
@@ -264,32 +281,32 @@
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label class="font-weight-bold text-dark">Model:</label>
-                                                <p class="form-control-plaintext">{{ $ride->car->model }}</p>
+                                                <p class="form-control-plaintext">{{ $ride->car->car_model }}</p>
                                             </div>
                                             <div class="form-group">
                                                 <label class="font-weight-bold text-dark">Brand:</label>
-                                                <p class="form-control-plaintext">{{ $ride->car->brand ?? 'N/A' }}</p>
+                                                <p class="form-control-plaintext">{{ $ride->car->car_make ?? 'N/A' }}</p>
                                             </div>
                                             <div class="form-group">
                                                 <label class="font-weight-bold text-dark">Year:</label>
-                                                <p class="form-control-plaintext">{{ $ride->car->year ?? 'N/A' }}</p>
+                                                <p class="form-control-plaintext">{{ $ride->car->car_year ?? 'N/A' }}</p>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label class="font-weight-bold text-dark">Color:</label>
-                                                <p class="form-control-plaintext">{{ $ride->car->color }}</p>
+                                                <p class="form-control-plaintext">{{ $ride->car->car_color }}</p>
                                             </div>
                                             <div class="form-group">
                                                 <label class="font-weight-bold text-dark">License Plate:</label>
-                                                <p class="form-control-plaintext">{{ $ride->car->license_plate }}</p>
+                                                <p class="form-control-plaintext">{{ $ride->car->licence_plate }}</p>
                                             </div>
                                             <div class="form-group">
                                                 <label class="font-weight-bold text-dark">Verification Status:</label>
                                                 <p>
                                                     <span
-                                                        class="badge badge-{{ $ride->car->is_verified ? 'success' : 'warning' }}">
-                                                        {{ $ride->car->is_verified ? 'Verified' : 'Pending' }}
+                                                        class="badge bg-{{ $ride->car->license_verified ? 'success' : 'warning' }}">
+                                                        {{ $ride->car->license_verified ? 'Verified' : 'Pending' }}
                                                     </span>
                                                 </p>
                                             </div>
@@ -319,9 +336,7 @@
                             <a href="{{ route('admin.rides.edit', $ride->id) }}" class="btn btn-warning btn-block">
                                 <i class="fas fa-edit mr-2"></i> Edit Ride
                             </a>
-                            <button class="btn btn-info btn-block" onclick="shareRide()">
-                                <i class="fas fa-share-alt mr-2"></i> Share Ride
-                            </button>
+                           
                             <button class="btn btn-success btn-block" onclick="sendReminder()">
                                 <i class="fas fa-bell mr-2"></i> Send Reminder
                             </button>
@@ -410,9 +425,18 @@
                                         </p>
                                     </div>
                                     <div>
-                                        <span class="badge badge-{{ $this->getStatusBadge($booking->status) }}">
-                                            {{ ucfirst($booking->status) }}
-                                        </span>
+                                    @php
+                                        $badgeClass = match($booking->status) {
+                                            'pending' => 'warning',
+                                            'confirmed' => 'success',
+                                            'cancelled' => 'danger',
+                                            'completed' => 'info',
+                                            default => 'secondary'
+                                        };
+                                    @endphp
+                                    <span class="badge badge-{{ $badgeClass }}">
+                                        {{ ucfirst($booking->status) }}
+                                    </span>
                                     </div>
                                 </div>
                                 <div class="mt-2">
@@ -506,6 +530,29 @@
     <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        @if (session('success'))
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: '{{ session('success') }}',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            @endif
+
+            @if (session('error'))
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'error',
+                    title: '{{ session('error') }}',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            @endif
         function confirmDelete() {
             $('#deleteModal').modal('show');
         }
@@ -537,7 +584,11 @@
                     })
                     .then(response => response.json())
                     .then(data => {
-                        alert('Reminder sent successfully!');
+                        if (data.status === 'success') {
+                            alert(data.message);
+                        } else {
+                            alert('Warning: ' + data.message);
+                        }
                     })
                     .catch(error => {
                         alert('Error sending reminder');
@@ -546,23 +597,9 @@
         }
 
         function cancelRide() {
-            if (confirm('Cancel this ride? All bookings will be refunded.')) {
-                // AJAX call to cancel ride
-                fetch(`/admin/rides/{{ $ride->id }}/cancel`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        alert('Ride cancelled successfully!');
-                        location.reload();
-                    })
-                    .catch(error => {
-                        alert('Error cancelling ride');
-                    });
+            if (confirm('Are you sure you want to delete this ride? This action cannot be undone.')) {
+                // Submit the delete form
+                document.getElementById('deleteForm').submit();
             }
         }
 

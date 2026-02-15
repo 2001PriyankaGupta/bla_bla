@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Ride;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -118,8 +119,19 @@ class BookingController extends Controller
                 'seats' => $request->seats
             ]);
 
-            // Send notification to driver (you can implement this)
-            // $this->sendBookingNotificationToDriver($ride, $booking);
+            // Send notification to driver
+            $driverId = $ride->car->user_id;
+            Notification::create([
+                'user_id' => $driverId,
+                'title' => 'New Booking Request',
+                'message' => Auth::user()->name . ' has requested ' . $request->seats . ' seat(s) for your ride from ' . $ride->pickup_point . ' to ' . $ride->drop_point,
+                'type' => 'booking_request',
+                'data' => [
+                    'ride_id' => $ride->id,
+                    'booking_id' => $booking->id,
+                    'passenger_name' => Auth::user()->name
+                ]
+            ]);
 
             return response()->json([
                 'status' => true,
@@ -200,7 +212,18 @@ class BookingController extends Controller
             ]);
 
             // Send notification to driver
-            // $this->sendCancellationNotification($booking);
+            $driverId = $booking->ride->car->user_id;
+            Notification::create([
+                'user_id' => $driverId,
+                'title' => 'Booking Cancelled',
+                'message' => Auth::user()->name . ' has cancelled their booking for your ride from ' . $booking->ride->pickup_point . ' to ' . $booking->ride->drop_point,
+                'type' => 'booking_cancelled_by_passenger',
+                'data' => [
+                    'ride_id' => $booking->ride_id,
+                    'booking_id' => $booking->id,
+                    'passenger_name' => Auth::user()->name
+                ]
+            ]);
 
             return response()->json([
                 'status' => true,
@@ -325,29 +348,28 @@ class BookingController extends Controller
                 'driver_name' => $user->name
             ]);
 
-            // Send notification to passenger (implement as needed)
-            // $this->sendStatusUpdateNotification($booking);
+            // Send notification to passenger
+            $statusTitle = $request->status == 'confirmed' ? 'Booking Confirmed' : 'Booking Rejected';
+            $statusMessage = $request->status == 'confirmed' 
+                ? 'Your ride from ' . $booking->ride->pickup_point . ' has been confirmed by ' . $user->name 
+                : 'Your ride request from ' . $booking->ride->pickup_point . ' has been rejected by ' . $user->name . '. Reason: ' . ($request->rejection_reason ?? 'No reason provided');
 
-            // Formatted response
-            $formattedBooking = [
-                'id' => $booking->id,
-                'passenger_name' => $booking->user ? $booking->user->name : 'N/A',
-                'status' => $booking->status,
-                'status_updated_at' => $booking->{$request->status == 'confirmed' ? 'approved_at' : 'rejected_at'},
-                'rejection_reason' => $booking->rejection_reason,
-                'seats_booked' => $booking->seats_booked,
-                'total_price' => $booking->total_price ? '$' . number_format($booking->total_price, 2) : '$0.00',
-                'ride_details' => $booking->ride ? [
-                    'date' => $booking->ride->ride_date,
-                    'time' => $booking->ride->start_time_formatted,
-                    'location' => $booking->ride->pickup_location
-                ] : null
-            ];
+            Notification::create([
+                'user_id' => $booking->user_id,
+                'title' => $statusTitle,
+                'message' => $statusMessage,
+                'type' => 'booking_status_updated',
+                'data' => [
+                    'ride_id' => $booking->ride_id,
+                    'booking_id' => $booking->id,
+                    'new_status' => $request->status
+                ]
+            ]);
 
             return response()->json([
                 'status' => true,
                 'message' => $message,
-                'data' => $formattedBooking
+                'data' => $booking
             ]);
 
         } catch (\Exception $e) {
@@ -444,8 +466,9 @@ class BookingController extends Controller
             
             $bookings = $query->orderBy('created_at', 'desc')->paginate(10);
             
+            $controller = $this;
             // User type ke hisaab se response format
-            $formattedBookings = $bookings->map(function($booking) use ($user) {
+            $formattedBookings = $bookings->getCollection()->map(function($booking) use ($user, $controller) {
                 
                 if ($user->user_type === 'driver') {
                     // Driver ke liye format - passenger ki details dikhao
@@ -458,7 +481,7 @@ class BookingController extends Controller
                         'time' => $booking->ride ? $booking->ride->start_time_formatted : 'N/A',
                         'location' => $booking->ride ? $booking->ride->pickup_location : 'N/A',
                         'destination' => $booking->ride ? $booking->ride->dropoff_location : 'N/A',
-                        'date_display' => $this->getDateDisplay($booking->ride ? $booking->ride->ride_date : null),
+                        'date_display' => $controller->getDateDisplay($booking->ride ? $booking->ride->ride_date : null),
                         'price' => $booking->total_price ? '$' . number_format($booking->total_price, 2) : '$0.00',
                         'status' => $booking->status,
                         'seats_booked' => $booking->seats_booked,
@@ -478,7 +501,7 @@ class BookingController extends Controller
                         'time' => $booking->ride ? $booking->ride->start_time_formatted : 'N/A',
                         'location' => $booking->ride ? $booking->ride->pickup_location : 'N/A',
                         'destination' => $booking->ride ? $booking->ride->dropoff_location : 'N/A',
-                        'date_display' => $this->getDateDisplay($booking->ride ? $booking->ride->ride_date : null),
+                        'date_display' => $controller->getDateDisplay($booking->ride ? $booking->ride->ride_date : null),
                         'price' => $booking->total_price ? '$' . number_format($booking->total_price, 2) : '$0.00',
                         'status' => $booking->status,
                         'seats_booked' => $booking->seats_booked,

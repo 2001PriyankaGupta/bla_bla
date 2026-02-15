@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Ride;
 use App\Models\Car;
 use App\Models\Booking;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -1205,13 +1206,70 @@ class RideController extends Controller
     public function updateStatus(Request $request, Ride $ride)
     {
         $request->validate([
-            'status' => 'required|in:active,completed,cancelled'
+            'status' => 'required|in:active,completed,cancelled,inactive'
         ]);
 
         $ride->update(['status' => $request->status]);
 
         return redirect()->route('admin.rides.index')
                         ->with('success', 'Ride status updated successfully.');
+    }
+
+    public function edit_ride($id)
+    {
+        $ride = Ride::findOrFail($id);
+        $cars = Car::with('user')->get();
+        return view('admin.rides.edit', compact('ride', 'cars'));
+    }
+
+    public function update_ride(Request $request, $id)
+    {
+        $ride = Ride::findOrFail($id);
+        
+        $request->validate([
+            'pickup_point' => 'required|string|max:255',
+            'drop_point' => 'required|string|max:255',
+            'date_time' => 'required|date',
+            'total_seats' => 'required|integer|min:1',
+            'price_per_seat' => 'required|numeric|min:0',
+            'car_id' => 'required|exists:cars,id',
+            'luggage_allowed' => 'required|boolean',
+            'status' => 'required|string|in:active,completed,cancelled,inactive'
+        ]);
+
+        $ride->update($request->all());
+
+        return redirect()->route('admin.rides.show', $ride->id)
+                        ->with('success', 'Ride updated successfully.');
+    }
+
+    public function sendReminder($id)
+    {
+        $ride = Ride::with('bookings.user')->findOrFail($id);
+        // Include both confirmed and pending bookings for the reminder
+        $passengers = $ride->bookings->whereIn('status', ['confirmed', 'pending'])->pluck('user')->filter();
+
+        if ($passengers->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No active passengers (confirmed or pending) found for this ride.'
+            ], 404);
+        }
+
+        foreach ($passengers as $passenger) {
+            Notification::create([
+                'user_id' => $passenger->id,
+                'title' => 'Ride Reminder',
+                'message' => 'Reminder: Your ride from ' . $ride->pickup_point . ' to ' . $ride->drop_point . ' is scheduled for ' . $ride->date_time->format('M d, h:i A'),
+                'type' => 'ride_reminder',
+                'data' => ['ride_id' => $ride->id]
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Reminder notifications sent to ' . $passengers->count() . ' passenger(s).'
+        ]);
     }
 
     public function destroy_rides(Ride $ride)

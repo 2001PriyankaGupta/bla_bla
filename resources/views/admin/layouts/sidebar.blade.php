@@ -104,15 +104,13 @@
             </a>
         </li>
        
-        <li class="{{ request()->routeIs('admin.fare-promo.*') ? 'mm-active' : '' }}">
+        <!-- <li class="{{ request()->routeIs('admin.fare-promo.*') ? 'mm-active' : '' }}">
             <a href="{{ route('admin.fare-promo.index') }}"
                 class="waves-effect {{ request()->routeIs('admin.fare-promo.*') ? 'active-link' : '' }}">
                 <i class="fas fa-seedling"></i>
                 Fare Management
             </a>
-
-
-        </li>
+        </li> -->
         <li class="{{ request()->routeIs('admin.payment.*') ? 'mm-active' : '' }}">
             <a href="{{ route('admin.payment.index') }}"
                 class="waves-effect {{ request()->routeIs('admin.payment.*') ? 'active-link' : '' }}">
