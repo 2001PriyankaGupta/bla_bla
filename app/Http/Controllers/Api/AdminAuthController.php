@@ -59,6 +59,7 @@ class AdminAuthController extends Controller
             'phone' => $validated['phone'],
             'password' => Hash::make($validated['password']),
             'is_admin' => false,
+            'user_type' => 'passenger',
             'profile_picture' => $profilePicturePath,
         ]);
 
