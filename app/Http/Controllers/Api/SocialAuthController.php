@@ -22,21 +22,37 @@ class SocialAuthController extends Controller
         ]);
 
         try {
-            // Using Socialite to verify the token sent from mobile app
-            // Note: Socialite by default handles access_tokens. 
-            // For id_tokens, we can use userFromToken if Socialite is configured correctly
-            // or verify manually (which you were already doing).
-            // However, to strictly use Socialite as requested:
-            $googleUser = Socialite::driver('google')->userFromToken($request->id_token);
+            // First, try verifying as an ID Token (common for mobile apps)
+            // Added withoutVerifying() to fix "cURL error 60: SSL certificate problem" on local Windows/WAMP
+            $response = Http::withoutVerifying()->get('https://oauth2.googleapis.com/tokeninfo', [
+                'id_token' => $request->id_token
+            ]);
 
-            if (!$googleUser) {
-                return response()->json(['error' => 'Invalid Google Token'], 401);
+            if ($response->successful()) {
+                $googleUser = $response->json();
+                $googleId = $googleUser['sub'];
+                $email = $googleUser['email'];
+                $name = $googleUser['name'] ?? 'Google User';
+                $picture = $googleUser['picture'] ?? null;
+            } else {
+                // Fallback to Socialite userFromToken (expects Access Token)
+                try {
+                    // Disable SSL verification for Socialite fallback as well for local dev
+                    $socialiteUser = Socialite::driver('google')
+                        ->setHttpClient(new \GuzzleHttp\Client(['verify' => false]))
+                        ->stateless()
+                        ->userFromToken($request->id_token);
+                    $googleId = $socialiteUser->getId();
+                    $email = $socialiteUser->getEmail();
+                    $name = $socialiteUser->getName() ?? 'Google User';
+                    $picture = $socialiteUser->getAvatar() ?? null;
+                } catch (Exception $e) {
+                    return response()->json([
+                        'status' => 'false',
+                        'message' => 'Invalid Google Token'
+                    ], 401);
+                }
             }
-
-            $googleId = $googleUser->getId();
-            $email = $googleUser->getEmail();
-            $name = $googleUser->getName() ?? 'Google User';
-            $picture = $googleUser->getAvatar() ?? null;
 
             // Find or Create User
             $user = User::where('google_id', $googleId)->first();
@@ -71,16 +87,18 @@ class SocialAuthController extends Controller
             $token = JWTAuth::fromUser($user);
 
             return response()->json([
-                'status' => 'success',
+                'status' => 'true',
+                'message' => 'Login successful',
                 'access_token' => $token,
                 'token_type' => 'bearer',
-                'expires_in' => config('jwt.ttl') * 60,
+                'expires_in' => auth('api')->factory()->getTTL() * 60,
                 'user' => $user
             ]);
 
         } catch (Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Socialite Error: ' . $e->getMessage());
             return response()->json([
-                'status' => 'error',
+                'status' => 'false',
                 'message' => 'Socialite Error: ' . $e->getMessage()
             ], 500);
         }
