@@ -69,7 +69,7 @@ Route::middleware(['api_auth'])->group(function () {
     Route::prefix('profile')->group(function () {
         Route::post('/update', [ProfileController::class, 'updateProfile']);
         Route::get('/get', [ProfileController::class, 'getProfile']);
-        Route::post('/switch-role', [ProfileController::class, 'switchRole']);
+
     });
 
     // Cars routes

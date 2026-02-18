@@ -280,15 +280,7 @@ class BookingController extends Controller
                 ], 404);
             }
 
-            // Check if user is a driver
-            if (!$user->user_type || $user->user_type !== 'driver') {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Only drivers can update booking status.'
-                ], 403);
-            }
-
-            // Check if this driver owns the car for this ride
+            // Check if this user owns the car for this ride
             if ($booking->ride->car->user_id != $user->id) {
                 return response()->json([
                     'status' => false,
@@ -341,11 +333,11 @@ class BookingController extends Controller
             // Refresh booking with relationships
             $booking->refresh();
 
-            Log::info('Booking status updated by driver', [
+            Log::info('Booking status updated', [
                 'booking_id' => $bookingId,
                 'new_status' => $request->status,
-                'driver_id' => $user->id,
-                'driver_name' => $user->name
+                'user_id' => $user->id,
+                'user_name' => $user->name
             ]);
 
             // Send notification to passenger
@@ -385,28 +377,6 @@ class BookingController extends Controller
         }
     }
 
-    // public function getUserBookings()
-    // {
-    //     try {
-    //         $bookings = Booking::with(['ride', 'ride.car', 'ride.driver'])
-    //             ->where('user_id', Auth::id())
-    //             ->orderBy('created_at', 'desc')
-    //             ->paginate(10);
-
-    //         return response()->json([
-    //             'status' => true,
-    //             'data' => $bookings,
-    //             'message' => 'Bookings retrieved successfully'
-    //         ]);
-
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'Server error: ' . $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
-
     public function getUserBookings(Request $request)
     {
         try {
@@ -419,97 +389,26 @@ class BookingController extends Controller
                 ], 401);
             }
 
-            $status = $request->query('status', 'all');
-            $query = null;
-            
-            // Check user type and prepare query accordingly
-            if ($user->user_type === 'driver') {
-                // Driver ki bookings - jo rides unki car ke liye hain
-                $query = Booking::with(['ride', 'ride.car', 'user'])
-                    ->whereHas('ride.car', function($q) use ($user) {
-                        $q->where('user_id', $user->id);
-                    });
-            } else {
-                // Passenger ki bookings - jo unke khud ki bookings hain
-                $query = Booking::with(['ride', 'ride.car', 'ride.driver'])
-                    ->where('user_id', $user->id);
-            }
-            
-            // Status ke according filter karna
-            switch ($status) {
-                case 'pending':
-                    $query->where('status', 'pending')
-                        ->whereHas('ride', function($q) {
-                            $q->where('ride_date', '>=', now());
-                        });
-                    break;
-                    
-                case 'confirmed':
-                    $query->where('status', 'confirmed')
-                        ->whereHas('ride', function($q) {
-                            $q->where('ride_date', '>=', now());
-                        });
-                    break;
-                    
-                case 'completed':
-                    $query->where('status', 'completed');
-                    break;
-                    
-                case 'cancelled':
-                    $query->whereIn('status', ['rejected', 'cancelled']);
-                    break;
-                    
-                default:
-                    // All bookings - koi filter nahi
-                    break;
-            }
-            
-            $bookings = $query->orderBy('created_at', 'desc')->paginate(10);
-            
-            $controller = $this;
-            // User type ke hisaab se response format
-            $formattedBookings = $bookings->getCollection()->map(function($booking) use ($user, $controller) {
-                
-                if ($user->user_type === 'driver') {
-                    // Driver ke liye format - passenger ki details dikhao
-                    return [
-                        'id' => $booking->id,
-                        'user_type' => 'driver',
-                        'passenger_name' => $booking->user ? $booking->user->name : 'N/A',
-                        'passenger_email' => $booking->user ? $booking->user->email : 'N/A',
-                        'passenger_phone' => $booking->user ? $booking->user->phone : 'N/A',
-                        'time' => $booking->ride ? $booking->ride->start_time_formatted : 'N/A',
-                        'location' => $booking->ride ? $booking->ride->pickup_location : 'N/A',
-                        'destination' => $booking->ride ? $booking->ride->dropoff_location : 'N/A',
-                        'date_display' => $controller->getDateDisplay($booking->ride ? $booking->ride->ride_date : null),
-                        'price' => $booking->total_price ? '$' . number_format($booking->total_price, 2) : '$0.00',
-                        'status' => $booking->status,
-                        'seats_booked' => $booking->seats_booked,
-                        'booking_date' => $booking->created_at->format('M d, Y h:i A'),
-                        'can_manage' => in_array($booking->status, ['pending', 'confirmed']),
-                        'ride_details' => $booking->ride ? [
-                            'ride_id' => $booking->ride->id,
-                            'car_model' => $booking->ride->car ? $booking->ride->car->model : 'N/A',
-                            'car_number' => $booking->ride->car ? $booking->ride->car->car_number : 'N/A'
-                        ] : null
-                    ];
-                } else {
-                    // Passenger ke liye format - driver aur car ki details dikhao
+            // Fetch passenger bookings
+            $passengerBookings = Booking::with(['ride', 'ride.car', 'ride.driver'])
+                ->where('user_id', $user->id)
+                ->get()
+                ->map(function($booking) {
                     return [
                         'id' => $booking->id,
                         'user_type' => 'passenger',
                         'time' => $booking->ride ? $booking->ride->start_time_formatted : 'N/A',
-                        'location' => $booking->ride ? $booking->ride->pickup_location : 'N/A',
-                        'destination' => $booking->ride ? $booking->ride->dropoff_location : 'N/A',
-                        'date_display' => $controller->getDateDisplay($booking->ride ? $booking->ride->ride_date : null),
-                        'price' => $booking->total_price ? '$' . number_format($booking->total_price, 2) : '$0.00',
+                        'location' => $booking->ride ? $booking->ride->pickup_point : 'N/A',
+                        'destination' => $booking->ride ? $booking->ride->drop_point : 'N/A',
+                        'date_display' => $booking->ride && $booking->ride->date_time ? Carbon::parse($booking->ride->date_time)->format('M d, Y') : 'N/A',
+                        'price' => $booking->total_price ? '₹' . number_format($booking->total_price, 2) : '₹0.00',
                         'status' => $booking->status,
                         'seats_booked' => $booking->seats_booked,
                         'booking_date' => $booking->created_at->format('M d, Y h:i A'),
-                        'driver_details' => $booking->ride && $booking->ride->driver ? [
-                            'driver_name' => $booking->ride->driver->name,
-                            'driver_phone' => $booking->ride->driver->phone,
-                            'driver_rating' => $booking->ride->driver->rating
+                        'driver_details' => $booking->ride && $booking->ride->car && $booking->ride->car->user ? [
+                            'driver_name' => $booking->ride->car->user->name,
+                            'driver_phone' => $booking->ride->car->user->phone,
+                            // 'driver_rating' => $booking->ride->car->user->rating
                         ] : null,
                         'car_details' => $booking->ride && $booking->ride->car ? [
                             'car_model' => $booking->ride->car->car_model,
@@ -518,19 +417,52 @@ class BookingController extends Controller
                             'car_photo' => $booking->ride->car->car_photo ? $booking->ride->car->car_photo : null
                         ] : null
                     ];
-                }
-            });
-            
+                });
+
+            // Fetch driver bookings (bookings on rides published by this user)
+            $driverBookings = Booking::with(['ride', 'ride.car', 'user'])
+                ->whereHas('ride.car', function($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->get()
+                ->map(function($booking) {
+                    return [
+                        'id' => $booking->id,
+                        'user_type' => 'driver',
+                        'passenger_name' => $booking->user ? $booking->user->name : 'N/A',
+                        'passenger_email' => $booking->user ? $booking->user->email : 'N/A',
+                        'passenger_phone' => $booking->user ? $booking->user->phone : 'N/A',
+                        'time' => $booking->ride ? $booking->ride->start_time_formatted : 'N/A',
+                        'location' => $booking->ride ? $booking->ride->pickup_point : 'N/A',
+                        'destination' => $booking->ride ? $booking->ride->drop_point : 'N/A',
+                        'date_display' => $booking->ride && $booking->ride->date_time ? Carbon::parse($booking->ride->date_time)->format('M d, Y') : 'N/A',
+                        'price' => $booking->total_price ? '₹' . number_format($booking->total_price, 2) : '₹0.00',
+                        'status' => $booking->status,
+                        'seats_booked' => $booking->seats_booked,
+                        'booking_date' => $booking->created_at->format('M d, Y h:i A'),
+                        'can_manage' => in_array($booking->status, ['pending', 'confirmed']),
+                        'ride_details' => $booking->ride ? [
+                            'ride_id' => $booking->ride->id,
+                            'car_model' => $booking->ride->car ? $booking->ride->car->car_model : 'N/A',
+                            'car_number' => $booking->ride->car ? $booking->ride->car->licence_plate : 'N/A'
+                        ] : null,
+                        'car_details' => $booking->ride && $booking->ride->car ? [
+                            'car_model' => $booking->ride->car->car_model,
+                            'car_number' => $booking->ride->car->licence_plate ,
+                            'car_type' => $booking->ride->car->car_make,
+                            'car_photo' => $booking->ride->car->car_photo ? $booking->ride->car->car_photo : null
+                        ] : null
+                    ];
+                });
+
+            // Merge and sort by date
+            $allBookings = $passengerBookings->concat($driverBookings)->sortByDesc('booking_date')->values();
+
             return response()->json([
                 'status' => true,
                 'data' => [
-                    'user_type' => $user->user_type,
-                    'bookings' => $formattedBookings,
-                    'pagination' => [
-                        'current_page' => $bookings->currentPage(),
-                        'total_pages' => $bookings->lastPage(),
-                        'total_items' => $bookings->total(),
-                    ]
+                    'user_type' => 'mixed',
+                    'bookings' => $allBookings,
                 ],
                 'message' => 'Bookings retrieved successfully'
             ]);
@@ -542,6 +474,7 @@ class BookingController extends Controller
             ], 500);
         }
     }
+
 
     // Helper function for date display like "Today", "Tomorrow", or date
     private function getDateDisplay($rideDate)

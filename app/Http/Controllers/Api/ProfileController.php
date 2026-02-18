@@ -173,36 +173,6 @@ class ProfileController extends Controller
         }
     }
 
-    public function switchRole(Request $request)
-    {
-        try {
-            $user = JWTAuth::parseToken()->authenticate();
-        } catch (TokenExpiredException | TokenInvalidException | JWTException $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Please login first to switch role.'
-            ], 401);
-        }
 
-        // Only passenger or driver can switch
-        if (!in_array($user->user_type, ['passenger', 'driver'])) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Only passenger or driver accounts can switch roles.'
-            ], 403);
-        }
-
-        // Switching logic
-        $newRole = $user->user_type === 'passenger' ? 'driver' : 'passenger';
-
-        $user->update(['user_type' => $newRole]);
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Role switched successfully.',
-            'new_role' => $newRole,
-            'user' => $user
-        ], 200);
-    }
 
 }
