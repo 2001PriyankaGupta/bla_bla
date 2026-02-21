@@ -399,13 +399,7 @@
                         <span class="info-label">Phone Number:</span>
                         <span class="info-value">{{ $user->phone ?? 'Not provided' }}</span>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">User Type:</span>
-                        <span class="info-value text-capitalize">
-                            <i class="fas {{ $user->user_type === 'driver' ? 'fa-car' : 'fa-user' }} me-2"></i>
-                            {{ $user->user_type ?? 'passenger' }}
-                        </span>
-                    </div>
+
                     <div class="info-item">
                         <span class="info-label">Member Since:</span>
                         <span class="info-value">{{ $user->created_at->format('M d, Y') }}</span>

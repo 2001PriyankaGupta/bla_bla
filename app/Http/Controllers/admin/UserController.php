@@ -96,7 +96,7 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
             'gender' => 'nullable|in:male,female,other',
             'locality' => 'nullable|string|max:255',
-            'user_type' => 'required|in:passenger,driver'
+
         ]);
 
         $updateData = [
@@ -105,7 +105,7 @@ class UserController extends Controller
             'phone' => $request->phone,
             'gender' => $request->gender,
             'locality' => $request->locality,
-            'user_type' => $request->user_type,
+
         ];
         if ($request->hasFile('profile_picture')) {
             $request->validate([

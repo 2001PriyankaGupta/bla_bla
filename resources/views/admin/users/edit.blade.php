@@ -223,21 +223,7 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="user_type" class="form-label">User Type *</label>
-                                <select class="form-select @error('user_type') is-invalid @enderror" id="user_type"
-                                    name="user_type" required>
-                                    <option value="passenger"
-                                        {{ old('user_type', $user->user_type) == 'passenger' ? 'selected' : '' }}>Passenger
-                                    </option>
-                                    <option value="driver"
-                                        {{ old('user_type', $user->user_type) == 'driver' ? 'selected' : '' }}>Driver
-                                    </option>
-                                </select>
-                                @error('user_type')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+
                         </div>
 
 

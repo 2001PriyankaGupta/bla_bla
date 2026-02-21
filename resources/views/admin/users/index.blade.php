@@ -432,19 +432,7 @@
                     <div class="stats-label">Total Users</div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stats-card">
-                    <div class="stats-number" id="passengersCount">{{ $users->where('user_type', 'passenger')->count() }}
-                    </div>
-                    <div class="stats-label">Passengers</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card">
-                    <div class="stats-number" id="driversCount">{{ $users->where('user_type', 'driver')->count() }}</div>
-                    <div class="stats-label">Drivers</div>
-                </div>
-            </div>
+
             <div class="col-md-3">
                 <div class="stats-card">
                     <div class="stats-number" id="activeUsers">{{ $users->where('status', 'active')->count() }}</div>
@@ -461,39 +449,9 @@
             </div>
 
             <div class="row">
-                <div class="col-md-6">
-                    <div class="filter-group">
-                        <div class="filter-title">
-                            <i class="fas fa-users"></i>
-                            User Type
-                        </div>
-                        <div class="filter-options">
-                            <div class="filter-option">
-                                <input type="radio" id="allUsers" name="userType" value="all" checked>
-                                <label for="allUsers">
-                                    <i class="fas fa-layer-group"></i>
-                                    All Users
-                                </label>
-                            </div>
-                            <div class="filter-option">
-                                <input type="radio" id="passengers" name="userType" value="passenger">
-                                <label for="passengers">
-                                    <i class="fas fa-user"></i>
-                                    Passengers
-                                </label>
-                            </div>
-                            <div class="filter-option">
-                                <input type="radio" id="drivers" name="userType" value="driver">
-                                <label for="drivers">
-                                    <i class="fas fa-car"></i>
-                                    Drivers
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="col-md-6">
+
+                <div class="col-md-12">
                     <div class="filter-group">
                         <div class="filter-title">
                             <i class="fas fa-user-check"></i>
@@ -536,7 +494,7 @@
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Role</th>
+
                             <th>Email</th>
                             <th>Rides</th>
                             <th>Rating</th>
@@ -557,12 +515,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td>
-                                    <span class="badge bg-light text-dark text-capitalize px-3 py-2">
-                                        <i class="fas {{ $user->user_type === 'driver' ? 'fa-car' : 'fa-user' }} me-2"></i>
-                                        {{ $user->user_type ?? 'passenger' }}
-                                    </span>
-                                </td>
+
                                 <td>{{ $user->email }}</td>
                                 <td>
                                     <span class="fw-bold text-primary">
@@ -674,16 +627,7 @@
                 }
             });
 
-            // User type filter functionality
-            $('input[name="userType"]').on('change', function() {
-                const userType = $(this).val();
-                if (userType === 'all') {
-                    table.column(1).search('').draw();
-                } else {
-                    table.column(1).search(userType).draw();
-                }
-                updateStatistics();
-            });
+
 
             // Status filter functionality - FIXED
             $('input[name="status"]').on('change', function() {
@@ -703,19 +647,13 @@
                     const visibleRows = table.rows({
                         filter: 'applied'
                     }).count();
-                    const passengerCount = table.column(1, {
-                        search: 'applied'
-                    }).data().toArray().filter(type => type.includes('passenger')).length;
-                    const driverCount = table.column(1, {
-                        search: 'applied'
-                    }).data().toArray().filter(type => type.includes('driver')).length;
+
                     const activeCount = table.column(6, {
                         search: 'applied'
                     }).data().toArray().filter(status => status.includes('active')).length;
 
                     $('#totalUsers').text(visibleRows);
-                    $('#passengersCount').text(passengerCount);
-                    $('#driversCount').text(driverCount);
+
                     $('#activeUsers').text(activeCount);
                 }, 100);
             }

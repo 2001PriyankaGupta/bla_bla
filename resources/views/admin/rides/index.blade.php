@@ -15,6 +15,9 @@
             --border-color: #e9ecef;
             --card-shadow: 0 4px 12px rgba(25, 151, 34, 0.08);
         }
+        td {
+            font-size: 12px;
+        }
 
         .ride-management-container {
             background-color: #f5f6f8;
