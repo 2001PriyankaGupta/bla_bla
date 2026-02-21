@@ -135,6 +135,101 @@ class ReviewController extends Controller
         ]);
     }
 
+    /**
+     * NEW: Get ALL reviews received by me (independent of role)
+     * Works for any user whether they created rides or booked rides
+     */
+    public function getMyReviews()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+        $userId = $user->id;
+
+        // Get reviews where I am the one being reviewed:
+        // Case 1: I was reviewed as a ride creator (driver_id = me, type = driver)
+        // Case 2: I was reviewed as a ride booker   (user_id  = me, type = passenger)
+        $allReviews = Review::where(function($q) use ($userId) {
+                $q->where('driver_id', $userId)->where('type', 'driver');
+            })
+            ->orWhere(function($q) use ($userId) {
+                $q->where('user_id', $userId)->where('type', 'passenger');
+            })
+            ->with([
+                'booking.ride:id,pickup_point,drop_point',
+                'passenger:id,name,profile_picture',   // reviewer when type=driver
+                'driver:id,name,profile_picture',       // reviewer when type=passenger
+                'reviewer:id,name,profile_picture'
+            ])
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        // Calculate combined stats
+        $totalReviews = $allReviews->total();
+        $avgRating = 0;
+
+        if ($totalReviews > 0) {
+            $driverAvg = Review::where('driver_id', $userId)->where('type', 'driver')->avg('rating') ?? 0;
+            $passengerAvg = Review::where('user_id', $userId)->where('type', 'passenger')->avg('rating') ?? 0;
+            $driverCount = Review::where('driver_id', $userId)->where('type', 'driver')->count();
+            $passengerCount = Review::where('user_id', $userId)->where('type', 'passenger')->count();
+
+            if (($driverCount + $passengerCount) > 0) {
+                $avgRating = (($driverAvg * $driverCount) + ($passengerAvg * $passengerCount)) / ($driverCount + $passengerCount);
+            }
+        }
+
+        // Build rating breakdown across both
+        $breakdown = [
+            '5_star' => 0, '4_star' => 0, '3_star' => 0, '2_star' => 0, '1_star' => 0
+        ];
+        foreach ([5, 4, 3, 2, 1] as $star) {
+            $dCount = Review::where('driver_id', $userId)->where('type', 'driver')->where('rating', $star)->count();
+            $pCount = Review::where('user_id', $userId)->where('type', 'passenger')->where('rating', $star)->count();
+            $breakdown["{$star}_star"] = $dCount + $pCount;
+        }
+
+        // Format reviews with reviewer info
+        $formattedReviews = $allReviews->getCollection()->map(function($review) use ($userId) {
+            // Who reviewed me?
+            $reviewerUser = null;
+            if ($review->type === 'driver') {
+                // I was the ride creator — passenger reviewed me
+                $reviewerUser = $review->passenger ?? $review->reviewer;
+            } else {
+                // I was the ride booker — ride creator reviewed me
+                $reviewerUser = $review->driver ?? $review->reviewer;
+            }
+
+            return [
+                'id'            => $review->id,
+                'rating'        => $review->rating,
+                'comment'       => $review->comment,
+                'type'          => $review->type,  // 'driver' or 'passenger'
+                'created_at'    => $review->created_at,
+                'reviewer_name' => $reviewerUser->name ?? 'Unknown User',
+                'reviewer_image'=> $reviewerUser->profile_picture ?? null,
+                'ride_route'    => ($review->booking->ride->pickup_point ?? 'N/A') . ' → ' . ($review->booking->ride->drop_point ?? 'N/A'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'stats'   => [
+                'average_rating'   => round($avgRating, 1),
+                'total_reviews'    => $totalReviews,
+                'rating_breakdown' => $breakdown,
+            ],
+            'reviews' => [
+                'data'          => $formattedReviews,
+                'current_page'  => $allReviews->currentPage(),
+                'last_page'     => $allReviews->lastPage(),
+                'total'         => $allReviews->total(),
+            ]
+        ]);
+    }
+
     
     public function submitReview(Request $request)
     {
@@ -214,7 +309,7 @@ class ReviewController extends Controller
             'comment' => $request->comment,
             'driver_id' => $driver_id,           // Who is being reviewed as driver
             'user_id' => $booking->user_id,      // Who is being reviewed as passenger
-            'reviewer_id' => $user->id,          // Who gave the review
+            'reviewed_by' => $user->id,          // Who gave the review
         ];
 
         $review = Review::create($reviewData);

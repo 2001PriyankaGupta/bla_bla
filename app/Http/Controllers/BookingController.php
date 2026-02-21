@@ -260,7 +260,7 @@ class BookingController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'status' => 'required|in:confirmed,rejected',
+                'status' => 'required|in:confirmed,rejected,completed',
                 'rejection_reason' => 'required_if:status,rejected|nullable|string|max:500'
             ]);
 
@@ -304,6 +304,13 @@ class BookingController extends Controller
                 ], 400);
             }
 
+            if ($request->status === 'completed' && $booking->status !== 'confirmed') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Only confirmed bookings can be marked as completed.'
+                ], 400);
+            }
+
             // Update booking
             $updateData = [
                 'status' => $request->status
@@ -322,6 +329,9 @@ class BookingController extends Controller
                 }
                 
                 $message = 'Booking confirmed successfully';
+            } elseif ($request->status == 'completed') {
+                $updateData['completed_at'] = Carbon::now();
+                $message = 'Ride marked as completed';
             } else {
                 $updateData['rejected_at'] = Carbon::now();
                 $updateData['rejection_reason'] = $request->rejection_reason;
@@ -341,10 +351,14 @@ class BookingController extends Controller
             ]);
 
             // Send notification to passenger
-            $statusTitle = $request->status == 'confirmed' ? 'Booking Confirmed' : 'Booking Rejected';
+            $statusTitle = $request->status == 'confirmed' ? 'Booking Confirmed' : 
+                          ($request->status == 'completed' ? 'Ride Completed' : 'Booking Rejected');
+            
             $statusMessage = $request->status == 'confirmed' 
                 ? 'Your ride from ' . $booking->ride->pickup_point . ' has been confirmed by ' . $user->name 
-                : 'Your ride request from ' . $booking->ride->pickup_point . ' has been rejected by ' . $user->name . '. Reason: ' . ($request->rejection_reason ?? 'No reason provided');
+                : ($request->status == 'completed' 
+                    ? 'Your ride from ' . $booking->ride->pickup_point . ' has been marked as completed. Hope you had a great trip!'
+                    : 'Your ride request from ' . $booking->ride->pickup_point . ' has been rejected by ' . $user->name . '. Reason: ' . ($request->rejection_reason ?? 'No reason provided'));
 
             Notification::create([
                 'user_id' => $booking->user_id,
@@ -597,7 +611,77 @@ class BookingController extends Controller
     }
 
 
+    public function reduceSeats(Request $request, $bookingId)
+    {
+        Log::info('reduceSeats called', [
+            'booking_id' => $bookingId,
+            'new_seats' => $request->new_seats,
+            'user_id' => Auth::id()
+        ]);
+
+        try {
+            $user = Auth::user();
+            $validator = Validator::make($request->all(), [
+                'new_seats' => 'required|integer|min:1'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['status' => false, 'error' => $validator->errors()->first()], 422);
+            }
+
+            $booking = Booking::with('ride.car.user')->find($bookingId);
+            if (!$booking) {
+                return response()->json(['status' => false, 'message' => 'Booking not found'], 404);
+            }
+
+            if ($booking->user_id != $user->id) {
+                return response()->json(['status' => false, 'message' => 'Unauthorized'], 403);
+            }
+
+            if (!in_array($booking->status, ['pending', 'confirmed'])) {
+                return response()->json(['status' => false, 'message' => 'Cannot modify ' . $booking->status . ' booking'], 400);
+            }
+
+            if ($request->new_seats >= $booking->seats_booked) {
+                return response()->json(['status' => false, 'message' => 'New seats must be less than current booked seats'], 400);
+            }
+
+            $oldSeats = $booking->seats_booked;
+            $newPrice = $booking->ride->price_per_seat * $request->new_seats;
+
+            $booking->update([
+                'seats_booked' => $request->new_seats,
+                'total_price' => $newPrice
+            ]);
+
+            // Notify driver
+            Notification::create([
+                'user_id' => $booking->ride->car->user_id,
+                'title' => 'Seats Reduced',
+                'message' => $user->name . " reduced their seats from {$oldSeats} to {$request->new_seats} for your ride.",
+                'type' => 'booking_updated',
+                'data' => [
+                    'ride_id' => $booking->ride_id,
+                    'booking_id' => $booking->id,
+                    'old_seats' => $oldSeats,
+                    'new_seats' => $request->new_seats
+                ]
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Seats reduced successfully',
+                'data' => $booking
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('ReduceSeats Error: ' . $e->getMessage());
+            return response()->json(['status' => false, 'message' => 'Server error: ' . $e->getMessage()], 500);
+        }
+    }
+
     private function maskPhoneNumber($phone)
+// ... existing maskPhoneNumber code ...
     {
         if (!$phone) return null;
         

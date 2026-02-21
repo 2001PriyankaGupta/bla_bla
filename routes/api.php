@@ -36,7 +36,7 @@ Route::prefix('auth')->group(function () {
 
 // Public ride search routes
 Route::post('/search-ride', [RideController::class, 'searchRides']);
-@Route::get('/flexible-search', [RideController::class, 'flexibleSearch']);
+Route::get('/flexible-search', [RideController::class, 'flexibleSearch']);
 Route::get('/{id}/seats', [RideController::class, 'getRideSeats']);
 
 // Public trip details
@@ -92,6 +92,7 @@ Route::middleware(['api_auth'])->group(function () {
     // Booking routes (# Passenger Only)
     Route::post('/trip/{id}/book', [BookingController::class, 'bookRide']);
     Route::post('/booking/{id}/cancel', [BookingController::class, 'cancelBooking']);
+    Route::post('/booking/reduce-seats/{id}', [BookingController::class, 'reduceSeats']);
     # Driver Only
     Route::post('/booking/{id}/status', [BookingController::class, 'updateBookingStatus']);
     Route::get('/my-bookings', [BookingController::class, 'getUserBookings']);
@@ -113,14 +114,13 @@ Route::middleware(['api_auth'])->group(function () {
     Route::get('/ride/{id}/conversation/{userId}', [MessageController::class, 'getConversation']);
     
     // REVIEWS SYSTEM APIs (Authentication required)
-    Route::prefix('reviews')->group(function () {
-      Route::get('/my-driver-reviews', [ReviewController::class, 'getMyDriverReviews']);
-      Route::get('/my-passenger-reviews', [ReviewController::class, 'getMyPassengerReviews']);
-        Route::post('/submit', [ReviewController::class, 'submitReview']);
-        Route::put('/{id}/update', [ReviewController::class, 'updateReview']);
-        Route::delete('/{id}/delete', [ReviewController::class, 'deleteReview']);
-        Route::get('/stats', [ReviewController::class, 'getReviewStats']);
-    });
+    Route::get('reviews/my-reviews', [ReviewController::class, 'getMyReviews']);
+    Route::get('reviews/my-driver-reviews', [ReviewController::class, 'getMyDriverReviews']);
+    Route::get('reviews/my-passenger-reviews', [ReviewController::class, 'getMyPassengerReviews']);
+    Route::post('reviews/submit', [ReviewController::class, 'submitReview']);
+    Route::put('reviews/{id}/update', [ReviewController::class, 'updateReview']);
+    Route::delete('reviews/{id}/delete', [ReviewController::class, 'deleteReview']);
+    Route::get('reviews/stats', [ReviewController::class, 'getReviewStats']);
 
     // Support & FAQ routes
     Route::get('/tickets', [SupportController::class, 'getTickets']);

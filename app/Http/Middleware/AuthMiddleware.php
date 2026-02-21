@@ -13,6 +13,16 @@ class AuthMiddleware
         try {
             $user = JWTAuth::parseToken()->authenticate();
 
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized: User not found.'
+                ], 401);
+            }
+
+            // Set user for Auth facade
+            \Illuminate\Support\Facades\Auth::setUser($user);
+
             // Block admin users from API access
             if ($user && $user->is_admin == 1) {
                 return response()->json([
@@ -21,12 +31,6 @@ class AuthMiddleware
                 ], 403);
             }
 
-            if (!$user) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Unauthorized: User not found.'
-                ], 401);
-            }
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',

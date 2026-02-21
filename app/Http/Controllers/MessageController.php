@@ -60,7 +60,7 @@ class MessageController extends Controller
             $isDriver = $ride->car->user_id == $user->id;
             $isPassenger = Booking::where('ride_id', $rideId)
                 ->where('user_id', $user->id)
-                ->whereIn('status', ['pending', 'confirmed'])
+                ->whereIn('status', ['pending', 'confirmed', 'completed'])
                 ->exists();
 
             if (!$isDriver && !$isPassenger) {
@@ -74,7 +74,7 @@ class MessageController extends Controller
             $receiverIsDriver = $ride->car->user_id == $request->receiver_id;
             $receiverIsPassenger = Booking::where('ride_id', $rideId)
                 ->where('user_id', $request->receiver_id)
-                ->whereIn('status', ['pending', 'confirmed'])
+                ->whereIn('status', ['pending', 'confirmed', 'completed'])
                 ->exists();
 
             if (!$receiverIsDriver && !$receiverIsPassenger) {
@@ -165,7 +165,7 @@ class MessageController extends Controller
             $isDriver = $ride->car->user_id == $user->id;
             $isPassenger = Booking::where('ride_id', $rideId)
                 ->where('user_id', $user->id)
-                ->whereIn('status', ['pending', 'confirmed'])
+                ->whereIn('status', ['pending', 'confirmed', 'completed'])
                 ->exists();
 
             if (!$isDriver && !$isPassenger) {
@@ -179,7 +179,7 @@ class MessageController extends Controller
             $otherIsDriver = $ride->car->user_id == $otherUserId;
             $otherIsPassenger = Booking::where('ride_id', $rideId)
                 ->where('user_id', $otherUserId)
-                ->whereIn('status', ['pending', 'confirmed'])
+                ->whereIn('status', ['pending', 'confirmed', 'completed'])
                 ->exists();
 
             if (!$otherIsDriver && !$otherIsPassenger) {

@@ -331,60 +331,67 @@
                             <table id="bookingsTable" class="table table-hover dt-responsive nowrap w-100">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
+                                        <th style="width: 80px;">ID</th>
                                         <th>Passenger</th>
-                                        <th>Ride Details</th>
+                                        <th>Route Details</th>
                                         <th>Seats & Price</th>
                                         <th>Status</th>
-                                        <th>Date</th>
-                                        <th>Actions</th>
+                                        <th>Created</th>
+                                        <th style="width: 70px;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    @php
+                                        $shortLoc = function($loc) {
+                                            if(!$loc) return 'N/A';
+                                            $parts = explode(',', $loc);
+                                            return trim($parts[0]);
+                                        };
+                                    @endphp
                                     @foreach($bookings as $booking)
                                         <tr>
                                             <td>
-                                                <span class="badge bg-light text-dark">#{{ str_pad($booking->id, 5, '0', STR_PAD_LEFT) }}</span>
+                                                <span class="badge bg-light text-dark border">#{{ str_pad($booking->id, 5, '0', STR_PAD_LEFT) }}</span>
                                             </td>
                                             <td>
                                                 <div class="user-info">
-                                                    <div class="user-avatar">
+                                                    <div class="user-avatar" style="width: 30px; height: 30px; font-size: 12px;">
                                                         {{ substr($booking->user->name ?? 'NA', 0, 1) }}
                                                     </div>
                                                     <div class="user-details">
-                                                        <h6>{{ $booking->user->name ?? 'N/A' }}</h6>
-                                                        <small>{{ $booking->user->email ?? 'No email' }}</small>
+                                                        <h6 class="mb-0" style="font-size: 13px;">{{ $booking->user->name ?? 'N/A' }}</h6>
+                                                        <small class="text-muted" style="font-size: 11px;">{{ $booking->user->email ?? 'N/A' }}</small>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>
                                                 <div class="ride-info">
-                                                    <div class="ride-route">
-                                                        <span class="text-success">{{ $booking->ride->pickup_point ?? 'N/A' }}</span>
-                                                        <i class="fas fa-arrow-right text-muted mx-1" style="font-size: 10px;"></i>
-                                                        <span class="text-danger">{{ $booking->ride->drop_point ?? 'N/A' }}</span>
+                                                    <div class="ride-route d-flex align-items-center">
+                                                        <span class="text-success fw-bold">{{ $shortLoc($booking->ride->pickup_point ?? '') }}</span>
+                                                        <i class="fas fa-long-arrow-alt-right text-muted mx-2"></i>
+                                                        <span class="text-danger fw-bold">{{ $shortLoc($booking->ride->drop_point ?? '') }}</span>
                                                     </div>
-                                                    <div class="ride-meta">
-                                                        <i class="far fa-calendar-alt me-1"></i> {{ $booking->ride ? \Carbon\Carbon::parse($booking->ride->date_time)->format('d M, Y h:i A') : 'N/A' }}
-                                                        <br>
-                                                        <i class="fas fa-user-tie me-1"></i> Driver: {{ $booking->ride->car->user->name ?? 'N/A' }}
+                                                    <div class="ride-meta mt-1">
+                                                        <span class="badge bg-light text-muted border-0 p-0" style="font-size: 11px;">
+                                                            <i class="far fa-calendar-alt me-1"></i> {{ $booking->ride ? \Carbon\Carbon::parse($booking->ride->date_time)->format('d M, h:i A') : 'N/A' }}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>
-                                                <div class="d-flex flex-column gap-1">
-                                                    <span class="badge bg-info bg-soft text-white">
-                                                        <i class="fas fa-chair me-1"></i> {{ $booking->seats_booked }} Seats
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 py-1 px-2">
+                                                        {{ $booking->seats_booked }} Seats
                                                     </span>
-                                                    <span class="fw-bold text-success">
-                                                        ${{ number_format($booking->total_price, 2) }}
+                                                    <span class="fw-bold text-success" style="font-size: 14px;">
+                                                        ₹{{ number_format($booking->total_price, 0) }}
                                                     </span>
                                                 </div>
                                             </td>
                                             <td>
-                                                <select class="form-select form-select-sm status-select" 
+                                                <select class="form-select form-select-sm status-select py-1 shadow-none" 
                                                         data-id="{{ $booking->id }}" 
-                                                        style="border-color: {{ 
+                                                        style="width: 125px; font-size: 12px; border-radius: 6px; border-left: 4px solid {{ 
                                                             $booking->status == 'confirmed' ? 'var(--success-color)' : 
                                                             ($booking->status == 'completed' ? 'var(--info-color)' : 
                                                             ($booking->status == 'rejected' || $booking->status == 'cancelled' ? 'var(--danger-color)' : 
@@ -402,17 +409,17 @@
                                                     {{ $booking->created_at->format('d M, Y') }}
                                                 </span>
                                             </td>
-                                            <td>
+                                            <td class="text-center">
                                                 <form action="{{ route('admin.bookings.destroy', $booking->id) }}" 
                                                       method="POST" 
-                                                      class="d-inline delete-form">
+                                                      class="delete-form">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" 
-                                                            class="btn btn-sm btn-danger"
+                                                            class="btn btn-sm btn-outline-danger border-0 p-1"
                                                             data-bs-toggle="tooltip"
-                                                            data-bs-title="Delete" style="height: 25px;">
-                                                        <i class="fas fa-trash"></i>
+                                                            data-bs-title="Delete" style="width: 28px; height: 28px;">
+                                                        <i class="fas fa-trash-alt"></i>
                                                     </button>
                                                 </form>
                                             </td>

@@ -30,12 +30,20 @@ class RideController extends Controller
                 ], 401);
             }
 
-            $rides = Ride::with(['car', 'car.user'])
+            $rides = Ride::with(['car', 'car.user', 'bookings'])
                         ->whereHas('car', function($query) use ($user) {
                             $query->where('user_id', $user->id);
                         })
                         ->latest()
-                        ->get();
+                        ->get()
+                        ->map(function($ride) {
+                            $bookedSeats = $ride->bookings
+                                ->whereIn('status', ['pending', 'confirmed'])
+                                ->sum('seats_booked');
+                            $ride->booked_seats    = (int) $bookedSeats;
+                            $ride->available_seats = max(0, $ride->total_seats - (int) $bookedSeats);
+                            return $ride;
+                        });
 
             return response()->json([
                 'status' => true,
@@ -160,6 +168,23 @@ class RideController extends Controller
                     'status' => false,
                     'error' => 'Car not found or you do not have permission to use this car.'
                 ], 404);
+            }
+
+            // 🔒 LICENSE VERIFICATION CHECK
+            // Only cars with admin-verified license can be used to create rides
+            if ($car->license_verified !== 'verified') {
+                $statusMessages = [
+                    'pending'  => 'Your car\'s license is still under review by admin. Please wait for approval before offering a ride.',
+                    'rejected' => 'Your car\'s license has been rejected by admin. Please contact support or update your documents.',
+                ];
+                $msg = $statusMessages[$car->license_verified]
+                    ?? 'Your car\'s license is not verified. Only verified cars can be used to offer rides.';
+
+                return response()->json([
+                    'status'            => false,
+                    'error'             => $msg,
+                    'verification_status' => $car->license_verified,
+                ], 403);
             }
 
             $ride = Ride::create([
@@ -562,6 +587,9 @@ class RideController extends Controller
 
             // Build query
             $query = Ride::with(['car', 'car.user'])
+                ->withSum(['bookings as booked_seats' => function($q) {
+                    $q->whereIn('status', ['pending', 'confirmed']);
+                }], 'seats_booked')
                 ->where(function($q) use ($fromKeywords) {
                     foreach ($fromKeywords as $word) {
                         $q->orWhereRaw('LOWER(pickup_point) LIKE ?', ['%' . $word . '%']);
@@ -573,7 +601,6 @@ class RideController extends Controller
                     }
                 })
                 ->whereRaw('DATE(date_time) = ?', [$departingDate])
-                ->where('total_seats', '>=', $passengers)
                 ->where('date_time', '>', now())
                 ->orderBy('date_time', 'asc');
 
@@ -581,7 +608,11 @@ class RideController extends Controller
             Log::info($query->toSql());
             Log::info('Bindings: ', $query->getBindings());
 
-            $rides = $query->get();
+            // Filter by passengers (available seats >= requested)
+            $rides = $query->get()->filter(function($ride) use ($passengers) {
+                $booked = $ride->booked_seats ?? 0;
+                return ($ride->total_seats - $booked) >= $passengers;
+            })->values();
 
             Log::info('=== FOUND RIDES COUNT ===');
             Log::info('Count: ' . $rides->count());
@@ -889,6 +920,21 @@ class RideController extends Controller
                     ];
                 });
 
+            // Check if current user has already reviewed
+            $hasReviewed = false;
+            $myReview = null;
+            try {
+                $user = JWTAuth::parseToken()->authenticate();
+                if ($user) {
+                    $myReview = \App\Models\Review::where('booking_id', $booking->id)
+                        ->where('reviewer_id', $user->id)
+                        ->first();
+                    $hasReviewed = $myReview ? true : false;
+                }
+            } catch (\Exception $e) {
+                // Not logged in or invalid token, ignore
+            }
+
             // Format the response with booking information
             $tripDetails = [
                 'trip_summary' => [
@@ -916,6 +962,12 @@ class RideController extends Controller
                         Carbon::parse($booking->approved_at)->format('M d, Y h:i A') : 
                         'Not approved yet',
                     'rejection_reason' => $booking->rejection_reason ?? 'N/A',
+                    'has_reviewed' => $hasReviewed,
+                    'my_review' => $myReview ? [
+                        'rating' => $myReview->rating,
+                        'comment' => $myReview->comment,
+                        'created_at' => $myReview->created_at->format('M d, Y')
+                    ] : null
                 ],
                 
                 // PASSENGER INFORMATION SECTION
