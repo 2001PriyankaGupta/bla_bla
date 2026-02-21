@@ -32,6 +32,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/verify-code', [AdminAuthController::class, 'verifyResetCode']);
     Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
     Route::post('/google-login', [SocialAuthController::class, 'googleLogin']);
+    Route::post('/google-register', [SocialAuthController::class, 'googleRegister']);
 });
 
 // Public ride search routes
