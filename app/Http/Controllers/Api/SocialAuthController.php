@@ -22,9 +22,11 @@ class SocialAuthController extends Controller
         ]);
 
         try {
-            $response = Http::withoutVerifying()->get('https://oauth2.googleapis.com/tokeninfo', [
-                'id_token' => $request->id_token
-            ]);
+            $response = Http::withoutVerifying()
+                ->timeout(30)
+                ->get('https://oauth2.googleapis.com/tokeninfo', [
+                    'id_token' => $request->id_token
+                ]);
 
             if ($response->successful()) {
                 $googleUser = $response->json();
@@ -79,9 +81,11 @@ class SocialAuthController extends Controller
         ]);
 
         try {
-            $response = Http::withoutVerifying()->get('https://oauth2.googleapis.com/tokeninfo', [
-                'id_token' => $request->id_token
-            ]);
+            $response = Http::withoutVerifying()
+                ->timeout(30)
+                ->get('https://oauth2.googleapis.com/tokeninfo', [
+                    'id_token' => $request->id_token
+                ]);
 
             if ($response->successful()) {
                 $googleUser = $response->json();

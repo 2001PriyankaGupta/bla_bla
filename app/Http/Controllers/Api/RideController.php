@@ -101,7 +101,8 @@ class RideController extends Controller
                     'to' => $ride->drop_point,
                     'date_time' => $ride->date_time,
                     'seats' => $ride->total_seats,
-                    'price' => $ride->price,
+                    'price' => $ride->price, // Price per seat? Wait, ride table has price_per_seat usually.
+                    'price_per_seat' => $ride->price_per_seat, 
                     'status' => $ride->status,
                     'car' => $ride->car ? [
                         'model' => $ride->car->car_model,
@@ -110,11 +111,32 @@ class RideController extends Controller
                 ];
             });
 
+            // Calculate Earnings Summary
+            // Today's Earnings
+            $todayEarnings = Booking::whereHas('ride.car', function($q) use ($user) {
+                                    $q->where('user_id', $user->id);
+                                })
+                                ->whereIn('status', ['confirmed', 'completed'])
+                                ->whereDate('created_at', Carbon::today())
+                                ->sum('total_price');
+
+            // This Week's Earnings
+            $weekEarnings = Booking::whereHas('ride.car', function($q) use ($user) {
+                                    $q->where('user_id', $user->id);
+                                })
+                                ->whereIn('status', ['confirmed', 'completed'])
+                                ->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])
+                                ->sum('total_price');
+
             return response()->json([
                 'status' => true,
-                'message' => 'Active rides fetched successfully',
+                'message' => 'Active rides and earnings fetched successfully',
                 'data' => $formattedRides,
-                'count' => $rides->count()
+                'count' => $rides->count(),
+                'earnings' => [
+                    'today' => (float)$todayEarnings,
+                    'week' => (float)$weekEarnings
+                ]
             ]);
 
         } catch (\Exception $e) {

@@ -261,7 +261,7 @@ class BookingController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'status' => 'required|in:confirmed,rejected,completed',
-                'rejection_reason' => 'required_if:status,rejected|nullable|string|max:500'
+                'rejection_reason' => 'nullable|string|max:500'
             ]);
 
             if ($validator->fails()) {
