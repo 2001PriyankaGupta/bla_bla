@@ -63,6 +63,22 @@ class AdminAuthController extends Controller
             'profile_picture' => $profilePicturePath,
         ]);
 
+        // Notify Admin about new user registration
+        $admins = User::where('is_admin', 1)->get();
+        foreach ($admins as $admin) {
+            \App\Models\Notification::create([
+                'user_id' => $admin->id,
+                'title'   => 'New User Registered',
+                'message' => "A new user ({$user->email}) has joined the platform.",
+                'type'    => 'new_user_registration',
+                'data'    => [
+                    'user_id' => $user->id,
+                    'email'   => $user->email,
+                    'type'    => $user->user_type
+                ]
+            ]);
+        }
+
         // Generate JWT token
         $token = JWTAuth::fromUser($user);
 

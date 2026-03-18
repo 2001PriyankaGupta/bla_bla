@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Faq;
 use App\Models\SupportTicket;
 use App\Models\TicketReply;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -67,6 +69,22 @@ class SupportController extends Controller
             'status' => 'Open',
         ]);
 
+        // Notify Admins about new support ticket
+        $admins = User::where('is_admin', 1)->get();
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'title'   => 'New Support Ticket',
+                'message' => "A new support ticket has been opened by {$request->user()->name}: {$ticket->subject}",
+                'type'    => 'new_support_ticket',
+                'data'    => [
+                    'ticket_id' => $ticket->id,
+                    'user_id'   => $request->user()->id,
+                    'subject'   => $ticket->subject
+                ]
+            ]);
+        }
+
         return response()->json([
             'status' => 'success',
             'message' => 'Ticket created successfully',
@@ -113,6 +131,22 @@ class SupportController extends Controller
             'message' => $request->message,
             'is_internal' => false
         ]);
+
+        // Notify Admins about user reply
+        $admins = User::where('is_admin', 1)->get();
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'title'   => 'New Ticket Reply',
+                'message' => "User {$request->user()->name} replied to ticket: {$ticket->subject}",
+                'type'    => 'ticket_reply',
+                'data'    => [
+                    'ticket_id' => $ticket->id,
+                    'reply_id'  => $reply->id,
+                    'user_id'   => $request->user()->id
+                ]
+            ]);
+        }
 
         // Automatically set status back to 'Open' if user replies and it was 'In Progress' or 'Closed'? 
         // Maybe just leave it for now.

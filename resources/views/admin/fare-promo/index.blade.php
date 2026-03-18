@@ -181,9 +181,9 @@
                             @csrf
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label for="base_fare" class="form-label fw-semibold">Base Fare ($)</label>
+                                    <label for="base_fare" class="form-label fw-semibold">Base Fare (₹)</label>
                                     <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                                        <span class="input-group-text">₹</span>
                                         <input type="number" step="0.01" class="form-control" id="base_fare"
                                             name="base_fare" value="{{ old('base_fare', $fareConfig->base_fare ?? 0) }}"
                                             required>
@@ -191,7 +191,7 @@
                                     <small class="form-text text-muted">Initial charge for all rides</small>
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="per_km_charge" class="form-label fw-semibold">Per Km Charge ($)</label>
+                                    <label for="per_km_charge" class="form-label fw-semibold">Per Km Charge (₹)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-road"></i></span>
                                         <input type="number" step="0.01" class="form-control" id="per_km_charge"
@@ -201,7 +201,7 @@
                                     <small class="form-text text-muted">Charge per kilometer traveled</small>
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="waiting_fee" class="form-label fw-semibold">Waiting Fee ($/min)</label>
+                                    <label for="waiting_fee" class="form-label fw-semibold">Waiting Fee (₹/min)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-clock"></i></span>
                                         <input type="number" step="0.01" class="form-control" id="waiting_fee"
@@ -212,7 +212,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label for="home_pickup_fee" class="form-label fw-semibold">Home Pickup Fee
-                                        ($)</label>
+                                        (₹)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-home"></i></span>
                                         <input type="number" step="0.01" class="form-control" id="home_pickup_fee"
@@ -224,7 +224,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label for="night_holiday_surcharge" class="form-label fw-semibold">Night / Holiday
-                                        Surcharge ($)</label>
+                                        Surcharge (₹)</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-moon"></i></span>
                                         <input type="number" step="0.01" class="form-control"
@@ -307,7 +307,7 @@
                                                 </span>
                                             </td>
                                             <td class="fw-semibold">
-                                                {{ $promo->type == 'percentage' ? $promo->discount_value . '%' : '$' . number_format($promo->discount_value, 2) }}
+                                                {{ $promo->type == 'percentage' ? $promo->discount_value . '%' : '₹ ' . number_format($promo->discount_value, 2) }}
                                             </td>
                                             <td>
                                                 <div class="d-flex flex-column">
@@ -395,18 +395,18 @@
                         <div class="mb-3">
                             <label for="type" class="form-label fw-semibold">Discount Type</label>
                             <select class="form-select" id="type" name="type" required>
-                                <option value="fixed">Fixed Amount ($ off)</option>
+                                <option value="fixed">Fixed Amount (₹ off)</option>
                                 <option value="percentage">Percentage (% off)</option>
                             </select>
                         </div>
                         <div class="mb-3">
                             <label for="discount_value" class="form-label fw-semibold">Discount Value</label>
                             <div class="input-group">
-                                <span class="input-group-text" id="discountPrefix">$</span>
+                                <span class="input-group-text" id="discountPrefix">₹</span>
                                 <input type="number" step="0.01" class="form-control" id="discount_value"
                                     name="discount_value" placeholder="0.00" required>
                             </div>
-                            <div class="form-text" id="discountHelp">Enter the discount amount in dollars</div>
+                            <div class="form-text" id="discountHelp">Enter the discount amount in rupees</div>
                         </div>
                         <div class="mb-3">
                             <label for="usage_limit" class="form-label fw-semibold">Usage Limit</label>
@@ -478,11 +478,11 @@
             // Handle discount type change
             $('#type').change(function() {
                 const type = $(this).val();
-                const prefix = type === 'percentage' ? '' : '$';
+                const prefix = type === 'percentage' ? '' : '₹ ';
                 const suffix = type === 'percentage' ? '%' : '';
                 const helpText = type === 'percentage' ?
                     'Enter the discount percentage (0-100)' :
-                    'Enter the discount amount in dollars';
+                    'Enter the discount amount in rupees';
 
                 $('#discountPrefix').text(prefix);
                 $('#discountHelp').text(helpText);

@@ -10,28 +10,34 @@ class UserController extends Controller
 {
     
     public function index(Request $request)
-{
-    // Get all users except the current admin
-    $query = User::where('id', '!=', auth()->id());
-    
-    // Apply user type filter if provided
-    if ($request->has('type') && in_array($request->type, ['passenger', 'driver'])) {
-        $query->where('user_type', $request->type);
-    }
-    
-    // Apply status filter if provided
-    if ($request->has('status') && in_array($request->status, ['active', 'inactive'])) {
-        $query->where('status', $request->status);
-    }
-    
-    $users = $query->withCount(['bookings', 'rides'])
-        ->withAvg('driverReviews', 'rating')
-        ->withAvg('passengerReviews', 'rating')
-        ->orderBy('created_at', 'desc')
-        ->paginate(10);
+    {
+        $query = User::where('id', '!=', auth()->id());
+        
+        // Base counts for statistics cards (always accurate)
+        $stats = [
+            'total' => User::where('id', '!=', auth()->id())->count(),
+            'active' => User::where('id', '!=', auth()->id())->where('status', 'active')->count(),
+            'drivers' => User::where('id', '!=', auth()->id())->where('user_type', 'driver')->count(),
+            'passengers' => User::where('id', '!=', auth()->id())->where('user_type', 'passenger')->count(),
+        ];
 
-    return view('admin.users.index', compact('users'));
-}
+        // Apply filters for the table data
+        if ($request->has('type') && in_array($request->type, ['passenger', 'driver'])) {
+            $query->where('user_type', $request->type);
+        }
+        
+        if ($request->has('status') && in_array($request->status, ['active', 'inactive'])) {
+            $query->where('status', $request->status);
+        }
+        
+        $users = $query->withCount(['bookings', 'rides'])
+            ->withAvg('driverReviews', 'rating')
+            ->withAvg('passengerReviews', 'rating')
+            ->orderBy('created_at', 'desc')
+            ->get(); // Using get() for client-side DataTables
+
+        return view('admin.users.index', compact('users', 'stats'));
+    }
 
     /**
      * Show the form for creating a new user.
@@ -47,11 +53,14 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|regex:/^[a-zA-Z\s]+$/',
             'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|max:20',
+            'phone' => 'required|regex:/^[0-9]{10}$/|unique:users,phone',
             'password' => 'required|min:8|confirmed',
             'role' => 'required|in:passenger,driver',
+        ], [
+            'name.regex' => 'The name field should only contain alphabets and spaces.',
+            'phone.regex' => 'The phone number must be exactly 10 digits!'
         ]);
 
         User::create([
@@ -91,12 +100,15 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|regex:/^[a-zA-Z\s]+$/',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|regex:/^[0-9]{10}$/|unique:users,phone,' . $user->id,
             'gender' => 'nullable|in:male,female,other',
             'locality' => 'nullable|string|max:255',
-
+        ], [
+            'name.regex' => 'The name field should only contain alphabets and spaces.',
+            'phone.regex' => 'The phone number must be exactly 10 digits!',
+            'phone.unique' => 'This phone number is already registered with another user.'
         ]);
 
         $updateData = [

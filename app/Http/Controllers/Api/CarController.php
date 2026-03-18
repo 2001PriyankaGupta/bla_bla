@@ -13,6 +13,7 @@ use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Facades\Log;
+use App\Models\Notification;
 
 
 class CarController extends Controller
@@ -122,6 +123,22 @@ class CarController extends Controller
             Log::info('Creating car with data:', $carData);
 
             $car = Car::create($carData);
+
+            // Notify Admin about new car registration
+            $admins = \App\Models\User::where('is_admin', 1)->get();
+            foreach ($admins as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'title'   => 'New Car Registered',
+                    'message' => "A new car ({$car->car_make} {$car->car_model}) has been registered by {$user->name} and is pending verification.",
+                    'type'    => 'new_car_registration',
+                    'data'    => [
+                        'car_id' => $car->id,
+                        'user_id' => $user->id,
+                        'car_details' => "{$car->car_make} {$car->car_model} ({$car->licence_plate})"
+                    ]
+                ]);
+            }
 
             // Format response with full URLs
             $carResponse = $this->formatCarResponse($car);

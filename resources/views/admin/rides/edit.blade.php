@@ -88,7 +88,7 @@
                                 <input type="number" name="total_seats" class="form-control" value="{{ old('total_seats', $ride->total_seats) }}" min="1" required>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Price per Seat ($)</label>
+                                <label class="form-label">Price per Seat (₹)</label>
                                 <input type="number" step="0.01" name="price_per_seat" class="form-control" value="{{ old('price_per_seat', $ride->price_per_seat) }}" required>
                             </div>
                             <div class="col-md-4">
@@ -127,7 +127,7 @@
                 <div class="card-body">
                     <div class="mb-2"><strong>Bookings:</strong> {{ $ride->bookings->count() }}</div>
                     <div class="mb-2"><strong>Confirmed Seats:</strong> {{ $ride->bookings->where('status', 'confirmed')->sum('seats_booked') }}</div>
-                    <div class="mb-2"><strong>Revenue:</strong> ${{ number_format($ride->bookings->where('status', 'confirmed')->sum('total_price'), 2) }}</div>
+                    <div class="mb-2"><strong>Revenue:</strong> ₹{{ number_format($ride->bookings->where('status', 'confirmed')->sum('total_price'), 2) }}</div>
                 </div>
             </div>
         </div>

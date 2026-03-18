@@ -61,55 +61,75 @@
     }
 
     .stats-card {
-        background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-        border-radius: 16px;
-        padding: 25px;
-        text-align: center;
-        box-shadow: var(--card-shadow);
-        margin-bottom: 20px;
-        border: 1px solid rgba(25, 151, 34, 0.1);
-        transition: all 0.3s ease;
+        background: white;
+        border-radius: 20px;
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        margin-bottom: 24px;
+        border: 1px solid rgba(0, 0, 0, 0.03);
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
         position: relative;
         overflow: hidden;
-    }
-
-    .stats-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, var(--primary-color), #34c759);
+        cursor: pointer;
+        text-decoration: none !important;
     }
 
     .stats-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(25, 151, 34, 0.15);
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        border-color: var(--primary-color);
+    }
+
+    .stats-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-right: 20px;
+        background: var(--primary-light);
+        color: var(--primary-color);
+        transition: all 0.4s ease;
+    }
+
+    .stats-card:hover .stats-icon {
+        background: var(--primary-color);
+        color: white;
+        transform: rotate(-10deg) scale(1.1);
+    }
+
+    .stats-info {
+        flex: 1;
     }
 
     .stats-number {
-        font-size: 2.5rem;
+        font-size: 1.8rem;
         font-weight: 800;
-        color: var(--primary-color);
-        margin-bottom: 8px;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        color: #2c3e50;
+        margin-bottom: 2px;
+        line-height: 1.2;
     }
 
     .stats-label {
         color: var(--secondary-color);
-        font-size: 0.95rem;
+        font-size: 0.85rem;
         font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     /* Enhanced Filter Section */
     .filter-section {
         background: white;
-        border-radius: 16px;
-        padding: 25px;
-        margin-bottom: 25px;
-        box-shadow: var(--card-shadow);
-        border: 1px solid rgba(25, 151, 34, 0.1);
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        border: 1px solid rgba(0, 0, 0, 0.03);
     }
 
     .filter-header {
@@ -151,9 +171,9 @@
     }
 
     .filter-options {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
     }
 
     .filter-option {
@@ -161,7 +181,10 @@
     }
 
     .filter-option input[type="radio"] {
-        display: none;
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
     }
 
     .filter-option label {
@@ -240,27 +263,34 @@
     }
 
     .status-badge {
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 10px;
-        font-weight: 600;
+        padding: 6px 14px;
+        border-radius: 50px;
+        font-size: 11px;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
+        display: inline-block;
+        min-width: 85px;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
     }
 
     .status-active {
-        background: linear-gradient(135deg, #27ae60, #2ecc71);
+        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
         color: white;
-        box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
-        padding: 5px;
-        border-radius: 19px;
-        font-size: smaller;
+        border: 1px solid #27ae60;
     }
 
     .status-inactive {
-        background: linear-gradient(135deg, #e74c3c, #ff6b6b);
+        background: linear-gradient(135deg, #e74c3c 0%, #ff6b6b 100%);
         color: white;
-        box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+        border: 1px solid #e74c3c;
+    }
+
+    .status-badge:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
     }
 
     .kyc-badge {
@@ -284,27 +314,57 @@
     }
 
     .action-btn {
-        padding: 8px 12px;
-        border-radius: 8px;
-        font-size: 0.8rem;
-        margin-right: 5px;
-        transition: all 0.3s ease;
-        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        margin-right: 4px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+        background-color: var(--light-bg);
     }
 
-    .action-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    .action-btn i {
+        line-height: 1;
     }
 
-    .btn-outline-primary {
+    .btn-outline-primary.action-btn {
         color: var(--primary-color);
-        border-color: var(--primary-color);
+        background-color: var(--primary-light);
+    }
+    .btn-outline-primary.action-btn:hover {
+        background-color: var(--primary-color);
+        color: white;
     }
 
-    .btn-outline-primary:hover {
-        background: var(--primary-color);
-        border-color: var(--primary-color);
+    .btn-outline-secondary.action-btn {
+        color: var(--secondary-color);
+        background-color: #f1f3f4;
+    }
+    .btn-outline-secondary.action-btn:hover {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+
+    .btn-outline-warning.action-btn {
+        color: #f39c12;
+        background-color: #fdf5e6;
+    }
+    .btn-outline-warning.action-btn:hover {
+        background-color: #f39c12;
+        color: white;
+    }
+
+    .btn-outline-danger.action-btn {
+        color: #e74c3c;
+        background-color: #fdeaeb;
+    }
+    .btn-outline-danger.action-btn:hover {
+        background-color: #e74c3c;
+        color: white;
     }
 
     /* Custom Search Box */
@@ -356,59 +416,149 @@
         display: none !important;
     }
 
-    .dataTables_wrapper .dataTables_paginate .paginate_button {
-        padding: 8px 16px;
-        margin: 0 4px;
+    
+
+    
+
+    /* Search Box Premium Styling */
+    .search-box-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        max-width: 450px;
+        margin-left: auto;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        color: var(--secondary-color);
+        font-size: 1rem;
+        z-index: 5;
+    }
+
+    #customSearchInput {
+        padding: 12px 60px 12px 45px;
+        border-radius: 12px;
+        border: 2px solid #edf2f7;
+        background: #f8f9fa;
+        font-size: 0.95rem;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 100%;
+        color: #2d3748;
+    }
+
+    #customSearchInput:focus {
+        border-color: var(--primary-color);
+        background: white;
+        box-shadow: 0 4px 15px rgba(36, 151, 34, 0.1);
+        outline: none;
+    }
+
+    .search-btn {
+        position: absolute;
+        right: 8px;
+        top: 6px;
+        bottom: 6px;
+        width: 40px;
+        background: var(--primary-color);
+        border: none;
         border-radius: 8px;
-        border: 1px solid #e9ecef;
-        font-weight: 600;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         transition: all 0.3s ease;
+        cursor: pointer;
     }
 
-    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-        background: linear-gradient(135deg, var(--primary-color), #34c759);
-        color: white !important;
-        border: 1px solid var(--primary-color);
-        box-shadow: 0 4px 15px rgba(25, 151, 34, 0.3);
+    .search-btn:hover {
+        background: #1b7a19;
+        transform: scale(1.05);
     }
 
-    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-        background: linear-gradient(135deg, #1e7a1d, #249722);
-        color: white !important;
-        border: 1px solid #1e7a1d;
-        transform: translateY(-2px);
+    .search-btn i {
+        font-size: 0.9rem;
     }
 
-    /* Responsive Design */
-    @media (max-width: 768px) {
+    @media (max-width: 991.98px) {
+        .search-box-wrapper {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+        
+        .filter-header {
+            margin-right: 0 !important;
+            margin-bottom: 20px !important;
+        }
+        
         .filter-options {
-            grid-template-columns: 1fr;
-        }
-
-        .stats-number {
-            font-size: 2rem;
-        }
-
-        .table-responsive {
-            font-size: 0.9rem;
+            justify-content: center;
         }
     }
 
-    /* Animation for filter changes */
-    @keyframes fadeIn {
+    @media (max-width: 575.98px) {
+        .filter-options {
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .filter-option, .filter-option label {
+            width: 100%;
+        }
+    }
+
+    /* Animation */
+    @keyframes slideInUp {
         from {
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(30px);
         }
-
         to {
             opacity: 1;
             transform: translateY(0);
         }
     }
 
+    .user-management-container {
+        animation: slideInUp 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+
     .table tbody tr {
-        animation: fadeIn 0.5s ease;
+        transition: all 0.3s ease;
+    }
+    .type-badge {
+        padding: 6px 14px;
+        border-radius: 50px;
+        font-size: 11px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        min-width: 105px;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .type-driver {
+        background: linear-gradient(135deg, #1565c0 0%, #1e88e5 100%);
+        color: white;
+        border: 1px solid #1565c0;
+    }
+
+    .type-passenger {
+        background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
+        color: white;
+        border: 1px solid #7b1fa2;
+    }
+
+    .type-badge:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 </style>
 
@@ -427,59 +577,100 @@
         <!-- Statistics Cards -->
         <div class="row">
             <div class="col-md-3">
-                <div class="stats-card">
-                    <div class="stats-number" id="totalUsers">{{ $users->total() }}</div>
-                    <div class="stats-label">Total Users</div>
-                </div>
+                <a href="{{ route('admin.users.index') }}" class="text-decoration-none">
+                    <div class="stats-card">
+                        <div class="stats-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stats-info">
+                            <div class="stats-number">{{ $stats['total'] }}</div>
+                            <div class="stats-label">Total Platform Users</div>
+                        </div>
+                    </div>
+                </a>
             </div>
 
             <div class="col-md-3">
-                <div class="stats-card">
-                    <div class="stats-number" id="activeUsers">{{ $users->where('status', 'active')->count() }}</div>
-                    <div class="stats-label">Active Users</div>
-                </div>
+                <a href="{{ route('admin.users.index', ['status' => 'active']) }}" class="text-decoration-none">
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: #e8f5e9; color: #2e7d32;">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="stats-info">
+                            <div class="stats-number">{{ $stats['active'] }}</div>
+                            <div class="stats-label">Active Users</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="col-md-3">
+                <a href="{{ route('admin.users.index', ['type' => 'driver']) }}" class="text-decoration-none">
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: #fff3e0; color: #ef6c00;">
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                        <div class="stats-info">
+                            <div class="stats-number">{{ $stats['drivers'] }}</div>
+                            <div class="stats-label">Total Drivers</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-3">
+                <a href="{{ route('admin.users.index', ['type' => 'passenger']) }}" class="text-decoration-none">
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: #e3f2fd; color: #1565c0;">
+                            <i class="fas fa-user-friends"></i>
+                        </div>
+                        <div class="stats-info">
+                            <div class="stats-number">{{ $stats['passengers'] }}</div>
+                            <div class="stats-label">Total Passengers</div>
+                        </div>
+                    </div>
+                </a>
             </div>
         </div>
 
-        <!-- Enhanced Filter Section -->
+        <!-- Enhanced Filter & Search Section -->
         <div class="filter-section">
-            <div class="filter-header">
-                <i class="fas fa-sliders-h"></i>
-                <h5>Filter Users</h5>
-            </div>
-
-            <div class="row">
-
-
-                <div class="col-md-12">
-                    <div class="filter-group">
-                        <div class="filter-title">
-                            <i class="fas fa-user-check"></i>
-                            Account Status
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-center mb-3 mb-lg-0">
+                        <div class="filter-header border-0 mb-0 p-0 me-4">
+                            <i class="fas fa-filter"></i>
+                            <h5 class="mb-0">Filter Status:</h5>
                         </div>
                         <div class="filter-options">
                             <div class="filter-option">
-                                <input type="radio" id="allStatus" name="status" value="all" checked>
-                                <label for="allStatus">
-                                    <i class="fas fa-globe"></i>
-                                    All Status
+                                <input type="radio" name="status" id="status-all" value="all" checked>
+                                <label for="status-all">
+                                    <i class="fas fa-users-cog"></i> All
                                 </label>
                             </div>
                             <div class="filter-option">
-                                <input type="radio" id="active" name="status" value="active">
-                                <label for="active">
-                                    <i class="fas fa-check-circle"></i>
-                                    Active
+                                <input type="radio" name="status" id="status-active" value="active">
+                                <label for="status-active">
+                                    <i class="fas fa-check-circle"></i> Active
                                 </label>
                             </div>
                             <div class="filter-option">
-                                <input type="radio" id="inactive" name="status" value="inactive">
-                                <label for="inactive">
-                                    <i class="fas fa-pause-circle"></i>
-                                    Inactive
+                                <input type="radio" name="status" id="status-inactive" value="inactive">
+                                <label for="status-inactive">
+                                    <i class="fas fa-times-circle"></i> Inactive
                                 </label>
                             </div>
                         </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="search-box-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="customSearchInput" class="form-control" placeholder="Quick search users...">
+                        <button id="customSearchBtn" class="search-btn">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -493,13 +684,12 @@
                 <table class="table table-hover mb-0" id="usersTable">
                     <thead>
                         <tr>
-                            <th>Name</th>
-
-                            <th>Email</th>
-                            <th>Rides</th>
-                            <th>Rating</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th>User Details</th>
+                            <th>Email Address</th>
+                            <th class="text-center">Activity</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">User Type</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -507,58 +697,67 @@
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ $user->profile_picture ? asset('storage/' . $user->profile_picture) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=249722&color=fff&size=128&bold=true' }}"
-                                            alt="{{ $user->name }}" class="user-avatar me-3">
-                                        <div>
-                                            <div class="fw-bold">{{ $user->name }}</div>
-                                            <small class="text-muted">{{ $user->phone }}</small>
+                                        <div class="position-relative">
+                                            <img src="{{ $user->profile_picture ? asset('storage/' . $user->profile_picture) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=249722&color=fff&size=128&bold=true' }}"
+                                                alt="{{ $user->name }}" class="user-avatar shadow-sm border">
+                                        </div>
+                                        <div class="ms-3">
+                                            <div class="fw-bold" style="color: #2c3e50;">{{ $user->name }}</div>
+                                            <small class="text-muted d-block"><i class="fas fa-phone-alt me-1 font-size-10"></i>{{ $user->phone }}</small>
                                         </div>
                                     </div>
                                 </td>
 
                                 <td>{{ $user->email }}</td>
-                                <td>
-                                    <span class="fw-bold text-primary">
-                                        {{ $user->user_type === 'driver' ? $user->rides_count : $user->bookings_count }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <span class="text-warning me-2">
-                                            <i class="fas fa-star"></i>
+                                <td class="text-center">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <span class="fw-bold text-primary mb-1">
+                                            {{ $user->user_type === 'driver' ? $user->rides_count : $user->bookings_count }}
                                         </span>
-                                        <span class="fw-bold">
-                                            @if($user->user_type === 'driver')
-                                                {{ number_format($user->driver_reviews_avg_rating ?? 0, 1) }}
-                                            @else
-                                                {{ number_format($user->passenger_reviews_avg_rating ?? 0, 1) }}
-                                            @endif
-                                        </span>
+                                        <div class="d-flex align-items-center text-warning font-size-12">
+                                            <i class="fas fa-star me-1"></i>
+                                            <span class="fw-bold text-dark">
+                                                @if($user->user_type === 'driver')
+                                                    {{ number_format($user->driver_reviews_avg_rating ?? 0, 1) }}
+                                                @else
+                                                    {{ number_format($user->passenger_reviews_avg_rating ?? 0, 1) }}
+                                                @endif
+                                            </span>
+                                        </div>
                                     </div>
                                 </td>
                                 
-                                <td>
-                                    <span class="{{ $user->status === 'active' ? 'status-active' : 'status-inactive' }}">
+                                <td class="text-center" data-search="{{ $user->status }}">
+                                    <span class="status-badge {{ $user->status === 'active' ? 'status-active' : 'status-inactive' }}">
                                         {{ ucfirst($user->status) }}
                                     </span>
                                 </td>
-                                <td>
-                                    <div class="btn-group">
+                                <td class="text-center" data-search="{{ $user->user_type }}">
+                                    <span class="type-badge {{ $user->user_type === 'driver' ? 'type-driver' : 'type-passenger' }}">
+                                        @if($user->user_type === 'driver')
+                                            <i class="fas fa-car-side"></i> Driver
+                                        @else
+                                            <i class="fas fa-user"></i> Passenger
+                                        @endif
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center">
                                         <a href="{{ route('admin.users.show', $user) }}"
-                                            class="btn btn-sm btn-outline-primary action-btn" data-bs-toggle="tooltip"
-                                            title="View Details" style="height: 25px;">
+                                            class="action-btn btn-outline-primary" data-bs-toggle="tooltip"
+                                            title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <a href="{{ route('admin.users.edit', $user) }}"
-                                            class="btn btn-sm btn-outline-secondary action-btn" data-bs-toggle="tooltip"
-                                            title="Edit User" style="height: 25px;">
+                                            class="action-btn btn-outline-secondary" data-bs-toggle="tooltip"
+                                            title="Edit User">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <form action="{{ route('admin.users.toggle-status', $user) }}" method="POST"
                                             class="d-inline toggle-status-form">
                                             @csrf
-                                            <button type="submit" class="btn btn-sm btn-outline-warning action-btn"
-                                                data-bs-toggle="tooltip" title="Toggle Status" style="height: 25px;">
+                                            <button type="submit" class="action-btn btn-outline-warning"
+                                                data-bs-toggle="tooltip" title="Toggle Status">
                                                 <i class="fas fa-sync-alt"></i>
                                             </button>
                                         </form>
@@ -566,8 +765,8 @@
                                             class="d-inline delete-user-form">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger action-btn"
-                                                data-bs-toggle="tooltip" title="Delete User" style="height: 25px;">
+                                            <button type="submit" class="action-btn btn-outline-danger"
+                                                data-bs-toggle="tooltip" title="Delete User">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
@@ -591,8 +790,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const table = $('#usersTable').DataTable({
-                "pageLength": 7,
-                "lengthMenu": [7, 15, 25, 50],
+                "pageLength": 10,
+                "lengthMenu": [10, 25, 50, 100],
                 "dom": 't<"d-flex justify-content-between align-items-center mt-4"lip>',
                 "language": {
                     "zeroRecords": "No matching users found",
@@ -608,6 +807,38 @@
                 }
             });
 
+            // Handle initial filtering from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const statusParam = urlParams.get('status');
+            const typeParam = urlParams.get('type');
+            
+            if (statusParam) {
+                $(`input[name="status"][value="${statusParam}"]`).prop('checked', true);
+            }
+
+            // Custom DataTable filter (Status + Type)
+            $.fn.dataTable.ext.search.push(
+                function(settings, data, dataIndex) {
+                    const selectedStatus = $('input[name="status"]:checked').val();
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const typeParam = urlParams.get('type');
+                    
+                    // Column Index Check: User Details(0), Email(1), Activity(2), Status(3), User Type(4)
+                    const rowStatus = data[3].toLowerCase(); // This matches the text content of column 3
+                    const rowType = data[4].toLowerCase();   // This matches the text content of hidden column 4
+                    
+                    // Filter Status
+                    if (selectedStatus !== 'all' && !rowStatus.includes(selectedStatus)) return false;
+                    
+                    // Filter Type (from URL)
+                    if (typeParam && !rowType.includes(typeParam)) return false;
+                    
+                    return true;
+                }
+            );
+
+            table.draw();
+
             // Initialize tooltips
             const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             const tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
@@ -617,45 +848,22 @@
             // Custom search functionality
             $('#customSearchBtn').on('click', function() {
                 table.search($('#customSearchInput').val()).draw();
-                updateStatistics();
             });
 
             $('#customSearchInput').on('keyup', function(e) {
                 if (e.key === "Enter" || e.keyCode === 13) {
                     table.search(this.value).draw();
-                    updateStatistics();
                 }
             });
 
-
-
-            // Status filter functionality - FIXED
+            // Trigger filter on radio change
             $('input[name="status"]').on('change', function() {
-                const status = $(this).val();
-                if (status === 'all') {
-                    table.column(6).search('').draw();
-                } else {
-                    // Search for the status in the status column (column index 6)
-                    table.column(6).search('^' + status + '$', true, false).draw();
-                }
-                updateStatistics();
+                table.draw();
             });
 
-            // Update statistics based on filtered data
+            // Update statistics (optional now as we use server counts, but good for search)
             function updateStatistics() {
-                setTimeout(() => {
-                    const visibleRows = table.rows({
-                        filter: 'applied'
-                    }).count();
-
-                    const activeCount = table.column(6, {
-                        search: 'applied'
-                    }).data().toArray().filter(status => status.includes('active')).length;
-
-                    $('#totalUsers').text(visibleRows);
-
-                    $('#activeUsers').text(activeCount);
-                }, 100);
+                // Not strictly needed with clickable cards, but can be used for search results
             }
 
             // Add animation to table rows

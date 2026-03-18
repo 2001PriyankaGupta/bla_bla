@@ -33,6 +33,11 @@ Route::middleware(['admin'])->group(function () {
         // You can also add a route for '/' if you want
         Route::get('/', 'dashboard')->name('admin');
         // Route::get('profile','profile')->name('profile');
+        
+        // Notification Routes
+        Route::get('/notifications', 'notifications')->name('notifications.index');
+        Route::post('/notifications/mark-all-read', 'markAllAsRead')->name('notifications.mark-all-read');
+        Route::post('/notifications/{id}/mark-read', 'markAsRead')->name('notifications.mark-read');
     });
 
     Route::get('/profile', [ProfileController::class, 'profile'])->name('profile');

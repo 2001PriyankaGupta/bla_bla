@@ -602,7 +602,7 @@
                                             <tr>
                                                 <td class="fw-semibold">{{ $tax->name }}</td>
                                                 <td>
-                                                    {{ $tax->type == 'percentage' ? $tax->rate . '%' : '$' . $tax->rate }}
+                                                    {{ $tax->type == 'percentage' ? $tax->rate . '%' : '₹ ' . $tax->rate }}
                                                 </td>
                                                 <td>
                                                     <span
@@ -887,7 +887,7 @@
                                     <label for="tax_type" class="form-label fw-semibold">Type</label>
                                     <select class="form-select" id="tax_type" name="type" required>
                                         <option value="percentage">Percentage (%)</option>
-                                        <option value="fixed">Fixed Amount ($)</option>
+                                        <option value="fixed">Fixed Amount (₹)</option>
                                     </select>
                                 </div>
                             </div>

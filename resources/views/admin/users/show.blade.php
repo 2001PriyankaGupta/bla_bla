@@ -373,7 +373,7 @@
                                 ? \App\Models\Booking::whereIn('ride_id', $user->rides->pluck('id'))->where('status', 'confirmed')->sum('total_price')
                                 : $user->bookings->where('status', 'confirmed')->sum('total_price');
                         @endphp
-                        {{ number_format($totalAmount, 2) }}
+                        ₹ {{ number_format($totalAmount, 2) }}
                     </div>
                     <div class="stats-label">{{ $user->user_type === 'driver' ? 'Total Earned' : 'Total Spent' }}</div>
                 </div>

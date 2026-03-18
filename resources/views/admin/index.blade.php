@@ -138,14 +138,14 @@
             </div>
             <div class="col-lg-2 col-md-4 col-6">
                 <div class="dashboard-card ">
-                    <div class="value">Rs {{ number_format($totalRevenue, 0) }}</div>
+                    <div class="value">₹ {{ number_format($totalRevenue, 0) }}</div>
                     <div class="label">Total Revenue</div>
                     <div class="sub-label {{ $revenueGrowth < 0 ? 'text-danger' : '' }}">{{ $revenueGrowth >= 0 ? '+' : '' }}{{ number_format($revenueGrowth, 1) }}%</div>
                 </div>
             </div>
             <div class="col-lg-3 col-md-4 col-6">
                 <div class="dashboard-card negative ">
-                    <div class="value">Rs {{ number_format($totalRefunds, 0) }}</div>
+                    <div class="value">₹ {{ number_format($totalRefunds, 0) }}</div>
                     <div class="label">Total Refunds</div>
                     <div class="sub-label">Verified</div>
                 </div>

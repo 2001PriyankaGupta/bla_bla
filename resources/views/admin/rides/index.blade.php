@@ -314,7 +314,7 @@
                                     <div class="fw-bold">{{ $ride->total_seats }}</div>
                                     <div class="text-muted small">Total Seats</div>
                                 </td>
-                                <td class="fw-bold text-success">${{ number_format($ride->price_per_seat, 2) }}</td>
+                                <td class="fw-bold text-success">₹ {{ number_format($ride->price_per_seat, 2) }}</td>
                                 <td>
                                     @if ($ride->luggage_allowed)
                                         <span class="badge bg-success">Yes</span>

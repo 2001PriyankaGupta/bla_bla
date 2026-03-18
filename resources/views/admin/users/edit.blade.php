@@ -172,7 +172,11 @@
                             <div class="col-md-6 mb-3">
                                 <label for="name" class="form-label">Full Name *</label>
                                 <input type="text" class="form-control @error('name') is-invalid @enderror"
-                                    id="name" name="name" value="{{ old('name', $user->name) }}" required>
+                                    id="name" name="name" value="{{ old('name', $user->name) }}" 
+                                    onkeypress="return /^[a-zA-Z\s]*$/.test(event.key)"
+                                    oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')"
+                                    pattern="[a-zA-Z\s]+" title="Only alphabets and spaces are allowed"
+                                    required>
                                 @error('name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -189,9 +193,13 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="phone" class="form-label">Phone Number</label>
+                                <label for="phone" class="form-label">Phone Number (10 Digits)</label>
                                 <input type="tel" class="form-control @error('phone') is-invalid @enderror"
-                                    id="phone" name="phone" value="{{ old('phone', $user->phone) }}">
+                                    id="phone" name="phone" value="{{ old('phone', $user->phone) }}" 
+                                    maxlength="10"
+                                    onkeypress="return /[0-9]/.test(event.key)"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                    pattern="[0-9]{10}" title="Exactly 10 digits required">
                                 @error('phone')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

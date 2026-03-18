@@ -76,4 +76,32 @@ class AdminController extends Controller
             'userGrowthLabels', 'userGrowthData'
         ));
     }
+
+    public function notifications()
+    {
+        $notifications = \App\Models\Notification::where('user_id', auth()->id())
+            ->latest()
+            ->paginate(20);
+            
+        return view('admin.notifications.index', compact('notifications'));
+    }
+
+    public function markAllAsRead()
+    {
+        \App\Models\Notification::where('user_id', auth()->id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+            
+        return response()->json(['status' => 'success']);
+    }
+
+    public function markAsRead($id)
+    {
+        $notification = \App\Models\Notification::where('user_id', auth()->id())
+            ->findOrFail($id);
+            
+        $notification->update(['is_read' => true]);
+        
+        return response()->json(['status' => 'success']);
+    }
 }

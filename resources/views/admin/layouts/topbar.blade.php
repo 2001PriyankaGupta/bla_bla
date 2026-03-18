@@ -3,29 +3,27 @@
         <div class="d-flex">
 
             <!-- LOGO -->
-            <div class="navbar-brand-box">
-                <a href="#" target="_blank" class="logo logo-dark">
+            <div class="navbar-brand-box" style="background-color: #248907; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <a href="{{ route('admin.dashboard') }}" class="logo logo-dark">
                     <span class="logo-sm">
-                        <h3 style="margin-top: 10px; color:white;font-size: 10px;">Travel</h3>
+                        <h3 style="margin-top: 22px; color:white; font-size: 14px; font-weight: 800; letter-spacing: 1px;">T</h3>
                     </span>
                     <span class="logo-lg">
-                        <h3 style="margin-top: 10px;color:white;font-size: xxx-large;">Travel</h3>
+                        <h3 style="margin-top: 22px; color:white; font-size: 28px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">Travel</h3>
                     </span>
                 </a>
 
-                <a href="#" target="_blank" class="logo logo-light">
+                <a href="{{ route('admin.dashboard') }}" class="logo logo-light">
                     <span class="logo-sm">
-                        <h3 style="margin-top: 10px; color:white;font-size: 10px">Bla Bla</h3>
+                         <h3 style="margin-top: 22px; color:white; font-size: 14px; font-weight: 800; letter-spacing: 1px;">T</h3>
                     </span>
                     <span class="logo-lg">
-                        <h3 style="margin-top: 10px;color:white;font-size: xxx-large;">Bla Bla</h3>
+                        <h3 style="margin-top: 22px; color:white; font-size: 28px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">Travel</h3>
                     </span>
-
-
                 </a>
             </div>
 
-            <button type="button" class="btn btn-sm px-3 font-size-24 header-item waves-effect" id="vertical-menu-btn">
+            <button type="button" class="btn btn-sm px-3 font-size-24 header-item waves-effect" id="vertical-menu-btn" style="color: #248907;">
                 <i class="mdi mdi-menu"></i>
             </button>
 
@@ -33,22 +31,22 @@
         </div>
 
         <!-- Search input -->
-        <div class="search-wrap" id="search-wrap">
+        <!-- <div class="search-wrap" id="search-wrap">
             <div class="search-bar">
                 <input class="search-input form-control" placeholder="Search" />
                 <a href="#" class="close-search toggle-search" data-target="#search-wrap">
                     <i class="mdi mdi-close-circle"></i>
                 </a>
             </div>
-        </div>
+        </div> -->
 
         <div class="d-flex">
-            <div class="dropdown d-none d-lg-inline-block">
+            <!-- <div class="dropdown d-none d-lg-inline-block">
                 <button type="button" class="btn header-item toggle-search noti-icon waves-effect"
                     data-target="#search-wrap">
                     <i class="mdi mdi-magnify"></i>
                 </button>
-            </div>
+            </div> -->
 
 
             <div class="dropdown d-none d-lg-inline-block ms-1">
@@ -56,6 +54,108 @@
                     <i class="mdi mdi-fullscreen"></i>
                 </button>
             </div>
+
+            @php
+                $admin_notifications = \App\Models\Notification::where('user_id', auth()->id())
+                    ->where('is_read', false)
+                    ->latest()
+                    ->take(5)
+                    ->get();
+                $unread_count = \App\Models\Notification::where('user_id', auth()->id())
+                    ->where('is_read', false)
+                    ->count();
+            @endphp
+
+            <div class="dropdown d-inline-block">
+                <button type="button" class="btn header-item noti-icon waves-effect" id="page-header-notifications-dropdown"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="mdi mdi-bell-outline"></i>
+                    @if($unread_count > 0)
+                        <span class="badge bg-danger rounded-circle" style="position: absolute; top: 15px; right: 8px; font-size: 10px; padding: 2px 5px;">{{ $unread_count }}</span>
+                    @endif
+                </button>
+                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0"
+                    aria-labelledby="page-header-notifications-dropdown">
+                    <div class="p-3">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h6 class="m-0 font-size-16"> Notifications </h6>
+                            </div>
+                            <div class="col-auto">
+                                <a href="{{ route('admin.notifications.index') }}" class="small"> View All</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div data-simplebar style="max-height: 230px;">
+                        @forelse($admin_notifications as $notification)
+                            <a href="javascript:void(0);" class="text-reset notification-item" onclick="markAsRead({{ $notification->id }})">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="avatar-xs">
+                                            <span class="avatar-title bg-primary rounded-circle font-size-16">
+                                                <i class="mdi mdi-bell-outline"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ $notification->title }}</h6>
+                                        <div class="font-size-12 text-muted">
+                                            <p class="mb-1">{{ $notification->message }}</p>
+                                            <p class="mb-0"><i class="mdi mdi-clock-outline"></i> {{ $notification->created_at->diffForHumans() }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        @empty
+                            <div class="p-3 text-center">
+                                <div class="avatar-md mx-auto mb-3">
+                                    <div class="avatar-title bg-light text-primary h3 rounded-circle">
+                                        <i class="mdi mdi-bell-off-outline"></i>
+                                    </div>
+                                </div>
+                                <h5 class="font-size-14 text-muted">No new notifications</h5>
+                            </div>
+                        @endforelse
+                    </div>
+                    @if($unread_count > 0)
+                        <div class="p-2 border-top d-grid">
+                            <a class="btn btn-sm btn-link font-size-14 text-center" href="javascript:void(0)" onclick="markAllAsRead()">
+                                <i class="mdi mdi-check-all me-1"></i> Mark all as read
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <script>
+                function markAsRead(id) {
+                    fetch("{{ url('admin/notifications') }}/" + id + "/mark-read", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(response => {
+                        if (response.ok) {
+                            location.reload();
+                        }
+                    });
+                }
+
+                function markAllAsRead() {
+                    fetch("{{ route('admin.notifications.mark-all-read') }}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(response => {
+                        if (response.ok) {
+                            location.reload();
+                        }
+                    });
+                }
+            </script>
 
 
             <div class="dropdown d-inline-block">
@@ -79,27 +179,10 @@
                     </a>
 
 
-                    {{-- <a class="dropdown-item d-block" href=""><span
-                            class="badge badge-success float-end">11</span><i
-                            class="mdi mdi-cog-outline font-size-16 align-middle me-1"></i> Settings</a> --}}
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item text-danger" href="{{ route('admin.logout') }}"
-                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                        <i class="mdi mdi-power font-size-16 align-middle me-1 text-danger"></i> Logout
-                    </a>
-
-                    <form id="logout-form" action="{{ route('admin.logout') }}" method="GET" style="display: none;">
-                        @csrf
-                    </form>
-
-                </div>
+                   
             </div>
 
-            {{-- <div class="dropdown d-inline-block">
-                <button type="button" class="btn header-item noti-icon right-bar-toggle waves-effect">
-                    <i class="mdi mdi-cog-outline font-size-20"></i>
-                </button>
-            </div> --}}
+           
 
         </div>
     </div>

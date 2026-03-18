@@ -220,6 +220,22 @@ class RideController extends Controller
                 'status' => $request->status ?? 'active',
             ]);
 
+            // Notify Admin about new ride creation
+            $admins = \App\Models\User::where('is_admin', 1)->get();
+            foreach ($admins as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'title'   => 'New Ride Posted',
+                    'message' => "{$user->name} has posted a new ride from {$ride->pickup_point} to {$ride->drop_point}.",
+                    'type'    => 'new_ride_posted',
+                    'data'    => [
+                        'ride_id' => $ride->id,
+                        'user_id' => $user->id,
+                        'route'   => "{$ride->pickup_point} -> {$ride->drop_point}"
+                    ]
+                ]);
+            }
+
             $ride->load('car');
 
             return response()->json([
@@ -1285,6 +1301,21 @@ class RideController extends Controller
 
         $ride->update(['status' => $request->status]);
 
+        // Notify Driver
+        if ($ride->driver) {
+            Notification::create([
+                'user_id' => $ride->driver->id,
+                'title'   => 'Ride Status Updated by Admin',
+                'message' => "Admin has updated the status of your ride from {$ride->pickup_point} to {$ride->drop_point} to '" . ucfirst($request->status) . "'.",
+                'type'    => 'ride_status_update',
+                'data'    => [
+                    'ride_id' => $ride->id,
+                    'status'  => $request->status,
+                    'updated_at' => now()->toDateTimeString()
+                ]
+            ]);
+        }
+
         return redirect()->route('admin.rides.index')
                         ->with('success', 'Ride status updated successfully.');
     }
@@ -1312,6 +1343,21 @@ class RideController extends Controller
         ]);
 
         $ride->update($request->all());
+
+        // Notify Driver
+        if ($ride->driver) {
+            Notification::create([
+                'user_id' => $ride->driver->id,
+                'title'   => 'Ride Updated by Admin',
+                'message' => "Admin has modified your ride details from {$ride->pickup_point} to {$ride->drop_point}. Please check the updated details.",
+                'type'    => 'ride_updated',
+                'data'    => [
+                    'ride_id' => $ride->id,
+                    'updated_fields' => array_keys($request->except(['_token', '_method'])),
+                    'updated_at' => now()->toDateTimeString()
+                ]
+            ]);
+        }
 
         return redirect()->route('admin.rides.show', $ride->id)
                         ->with('success', 'Ride updated successfully.');
@@ -1348,6 +1394,24 @@ class RideController extends Controller
 
     public function destroy_rides(Ride $ride)
     {
+        // Notify Driver Before Deletion
+        if ($ride->driver) {
+            Notification::create([
+                'user_id' => $ride->driver->id,
+                'title'   => 'Ride Deleted by Admin',
+                'message' => "Admin has deleted your ride from {$ride->pickup_point} to {$ride->drop_point} scheduled for {$ride->date_time->format('M d, Y h:i A')}.",
+                'type'    => 'ride_deleted',
+                'data'    => [
+                    'ride_details' => [
+                        'from' => $ride->pickup_point,
+                        'to' => $ride->drop_point,
+                        'date_time' => $ride->date_time->toDateTimeString()
+                    ],
+                    'deleted_at' => now()->toDateTimeString()
+                ]
+            ]);
+        }
+
         $ride->delete();
 
         return redirect()->route('admin.rides.index')

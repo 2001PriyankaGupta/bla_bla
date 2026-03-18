@@ -187,6 +187,13 @@
         padding: 1.5rem;
         border: 1px solid var(--border-color);
         transition: transform 0.3s ease;
+        cursor: pointer;
+    }
+
+    .stats-card.active {
+        border-color: var(--primary-color);
+        background-color: rgba(40, 167, 69, 0.02);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
     .stats-card:hover {
@@ -262,7 +269,7 @@
         <!-- Statistics Row -->
         <div class="row mb-4 mt-4">
             <div class="col-xl-3 col-md-6">
-                <div class="stats-card">
+                <div class="stats-card filter-card" data-status="">
                     <div class="stats-icon total">
                         <i class="fas fa-list fa-2x"></i>
                     </div>
@@ -271,7 +278,7 @@
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="stats-card">
+                <div class="stats-card filter-card" data-status="confirmed|completed">
                     <div class="stats-icon confirmed">
                         <i class="fas fa-check-circle fa-2x"></i>
                     </div>
@@ -280,7 +287,7 @@
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="stats-card">
+                <div class="stats-card filter-card" data-status="pending">
                     <div class="stats-icon pending">
                         <i class="fas fa-clock fa-2x"></i>
                     </div>
@@ -289,7 +296,7 @@
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="stats-card">
+                <div class="stats-card filter-card" data-status="rejected|cancelled">
                     <div class="stats-icon rejected">
                         <i class="fas fa-times-circle fa-2x"></i>
                     </div>
@@ -349,7 +356,7 @@
                                         };
                                     @endphp
                                     @foreach($bookings as $booking)
-                                        <tr>
+                                        <tr data-status="{{ $booking->status }}">
                                             <td>
                                                 <span class="badge bg-light text-dark border">#{{ str_pad($booking->id, 5, '0', STR_PAD_LEFT) }}</span>
                                             </td>
@@ -384,11 +391,11 @@
                                                         {{ $booking->seats_booked }} Seats
                                                     </span>
                                                     <span class="fw-bold text-success" style="font-size: 14px;">
-                                                        ₹{{ number_format($booking->total_price, 0) }}
+                                                        ₹ {{ number_format($booking->total_price, 0) }}
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td>
+                                            <td data-search="{{ $booking->status }}">
                                                 <select class="form-select form-select-sm status-select py-1 shadow-none" 
                                                         data-id="{{ $booking->id }}" 
                                                         style="width: 125px; font-size: 12px; border-radius: 6px; border-left: 4px solid {{ 
@@ -481,6 +488,32 @@
                     return new bootstrap.Tooltip(tooltipTriggerEl)
                 });
             }
+        });
+
+        // Custom filtering function for status
+        $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                var $activeCard = $('.filter-card.active');
+                if ($activeCard.length === 0) return true;
+                
+                var filterValue = $activeCard.data('status');
+                if (!filterValue || filterValue === "") return true;
+                
+                // Get status directly from the tr data-status attribute
+                var rowStatus = $(table.row(dataIndex).node()).attr('data-status');
+                
+                var allowedStatuses = filterValue.toString().split('|');
+                return allowedStatuses.includes(rowStatus);
+            }
+        );
+
+        // Filter cards logic
+        $('.filter-card').on('click', function() {
+            $('.filter-card').removeClass('active');
+            $(this).addClass('active');
+            
+            // Re-draw the table with the new filter
+            table.draw();
         });
 
         // Export CSV button

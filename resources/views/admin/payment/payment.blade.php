@@ -262,25 +262,25 @@
                 <div class="col-md-3">
                     <div class="stats-card">
                         <div class="stats-label">Total Payouts to Drivers</div>
-                        <div class="stats-number">Rs{{ number_format($driverPayouts, 2) }}</div>
+                        <div class="stats-number">₹ {{ number_format($driverPayouts, 2) }}</div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card">
                         <div class="stats-label">Platform Commission</div>
-                        <div class="stats-number">Rs{{ number_format($platformCommission, 2) }}</div>
+                        <div class="stats-number">₹ {{ number_format($platformCommission, 2) }}</div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card">
                         <div class="stats-label">Total Refunds</div>
-                        <div class="stats-number">Rs{{ number_format($totalRefunds, 2) }}</div>
+                        <div class="stats-number">₹ {{ number_format($totalRefunds, 2) }}</div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card">
                         <div class="stats-label">Tax Collected</div>
-                        <div class="stats-number">Rs{{ number_format($taxCollected, 2) }}</div>
+                        <div class="stats-number">₹ {{ number_format($taxCollected, 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -332,7 +332,7 @@
                                         {{ $payment->user ? $payment->user->name : 'Unknown User' }}
                                     </div>
                                 </td>
-                                <td>Rs{{ number_format($payment->amount, 2) }}</td>
+                                <td>₹ {{ number_format($payment->amount, 2) }}</td>
                                 <td>{{ ucfirst($payment->payment_method ?? 'Online') }}</td>
                                 <td>
                                     @if(strtolower($payment->status) == 'captured' || strtolower($payment->status) == 'completed' || strtolower($payment->status) == 'success')
@@ -352,7 +352,7 @@
                                         data-bs-target="#paymentDetailsModal"
                                         data-transaction="{{ $payment->transaction_id ?? 'TXN-'.$payment->id }}"
                                         data-user="{{ $payment->user ? $payment->user->name : 'N/A' }}"
-                                        data-amount="Rs{{ number_format($payment->amount, 2) }}"
+                                        data-amount="₹ {{ number_format($payment->amount, 2) }}"
                                         data-date="{{ $payment->created_at->format('M d, Y H:i') }}"
                                         data-status="{{ $payment->status }}"
                                         data-ride="{{ $payment->booking && $payment->booking->ride ? 'RD-'.$payment->booking->ride->id : 'N/A' }}"

@@ -61,9 +61,7 @@
                 <a href="{{ route('admin.rides.index') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Back to Rides
                 </a>
-                <button class="btn btn-danger" onclick="confirmDelete()">
-                    <i class="fas fa-trash"></i> Delete Ride
-                </button>
+                
             </div>
         </div>
 
@@ -138,11 +136,11 @@
                                     Total Revenue
                                 </div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                    ${{ number_format($totalRevenue, 2) }}
+                                    ₹ {{ number_format($totalRevenue, 2) }}
                                 </div>
                             </div>
                             <div class="col-auto">
-                                <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
@@ -186,7 +184,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="font-weight-bold text-dark">Price per Seat:</label>
-                                    <p class="form-control-plaintext">${{ number_format($ride->price_per_seat, 2) }}</p>
+                                    <p class="form-control-plaintext">₹ {{ number_format($ride->price_per_seat, 2) }}</p>
                                 </div>
                                 <div class="form-group">
                                     <label class="font-weight-bold text-dark">Total Seats:</label>
@@ -337,11 +335,8 @@
                                 <i class="fas fa-edit mr-2"></i> Edit Ride
                             </a>
                            
-                            <button class="btn btn-success btn-block" onclick="sendReminder()">
-                                <i class="fas fa-bell mr-2"></i> Send Reminder
-                            </button>
                             <button class="btn btn-danger btn-block" onclick="cancelRide()">
-                                <i class="fas fa-times-circle mr-2"></i> Cancel Ride
+                                <i class="fas fa-times-circle mr-2"></i> Delete Ride
                             </button>
                         </div>
                     </div>
@@ -403,7 +398,7 @@
                 </div>
 
                 <!-- Bookings Card -->
-                <div class="card shadow mb-4">
+                <!-- <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-primary">Bookings ({{ $ride->bookings->count() }})</h6>
                         <span class="badge badge-primary">{{ $confirmedBookings }} confirmed</span>
@@ -420,8 +415,8 @@
                                             <i class="fas fa-chair mr-1"></i> {{ $booking->seats_booked }} seat(s)
                                         </p>
                                         <p class="text-muted small mb-1">
-                                            <i class="fas fa-dollar-sign mr-1"></i>
-                                            ${{ number_format($booking->total_price, 2) }}
+                                            <i class="fas fa-rupee-sign mr-1"></i>
+                                            ₹ {{ number_format($booking->total_price, 2) }}
                                         </p>
                                     </div>
                                     <div>
@@ -468,7 +463,7 @@
                             </div>
                         @endforelse
                     </div>
-                </div>
+                </div> -->
 
                 <!-- Map Preview Card -->
                 <div class="card shadow">
@@ -476,18 +471,27 @@
                         <h6 class="m-0 font-weight-bold text-primary">Route Map</h6>
                     </div>
                     <div class="card-body">
-                        <div id="mapPreview" style="height: 200px; background: #f8f9fa;"
-                            class="rounded d-flex align-items-center justify-content-center">
-                            <div class="text-center">
-                                <i class="fas fa-map-marked-alt fa-2x text-muted mb-2"></i>
-                                <p class="text-muted small">Map preview would appear here</p>
+                        <div id="mapPreview" style="height: 300px; width: 100%;" class="rounded border">
+                            <div class="h-100 d-flex align-items-center justify-content-center bg-light">
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary mb-2" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="text-muted small mb-0">Loading Map...</p>
+                                </div>
                             </div>
                         </div>
-                        <div class="mt-3">
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                Distance: ~15.2 km • Duration: ~25 min
-                            </small>
+                        <div class="mt-3 p-2 bg-light rounded border">
+                            <div class="row text-center small">
+                                <div class="col-6 border-end">
+                                    <div class="text-muted mb-1">Estimated Distance</div>
+                                    <div class="fw-bold text-primary h6 mb-0" id="routeDistance">Calculating...</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-muted mb-1">Estimated Duration</div>
+                                    <div class="fw-bold text-primary h6 mb-0" id="routeDuration">Calculating...</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -495,31 +499,7 @@
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Confirm Delete</h5>
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span>&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to delete this ride?</p>
-                    <p class="text-danger"><strong>Warning:</strong> This action cannot be undone.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <form action="{{ route('admin.rides.destroy', $ride->id) }}" method="POST" id="deleteForm">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-danger">Delete Ride</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+   
 @endsection
 
 @section('scripts')
@@ -529,6 +509,57 @@
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        // Google Maps Initialization
+        function initMap() {
+            const directionsService = new google.maps.DirectionsService();
+            const directionsRenderer = new google.maps.DirectionsRenderer();
+            const map = new google.maps.Map(document.getElementById("mapPreview"), {
+                zoom: 7,
+                center: { lat: 20.5937, lng: 78.9629 }, // Center of India
+            });
+            directionsRenderer.setMap(map);
+
+            const origin = "{{ $ride->pickup_point }}";
+            const destination = "{{ $ride->drop_point }}";
+
+            if (origin && destination) {
+                calculateAndDisplayRoute(directionsService, directionsRenderer, origin, destination);
+            }
+        }
+
+        function calculateAndDisplayRoute(directionsService, directionsRenderer, origin, destination) {
+            directionsService.route(
+                {
+                    origin: origin,
+                    destination: destination,
+                    travelMode: google.maps.TravelMode.DRIVING,
+                },
+                (response, status) => {
+                    if (status === "OK") {
+                        directionsRenderer.setDirections(response);
+                        const route = response.routes[0].legs[0];
+                        document.getElementById('routeDistance').innerText = route.distance.text;
+                        document.getElementById('routeDuration').innerText = route.duration.text;
+                    } else {
+                        document.getElementById('mapPreview').innerHTML = `
+                            <div class="h-100 d-flex align-items-center justify-content-center bg-light text-center p-3">
+                                <div>
+                                    <i class="fas fa-exclamation-triangle text-warning fa-2x mb-2"></i>
+                                    <p class="text-muted small mb-0">Directions request failed due to ${status}. Or locations not found on Google Maps.</p>
+                                </div>
+                            </div>
+                        `;
+                        document.getElementById('routeDistance').innerText = 'N/A';
+                        document.getElementById('routeDuration').innerText = 'N/A';
+                    }
+                }
+            );
+        }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}&callback=initMap" async defer></script>
+
     <script>
         @if (session('success'))
                 Swal.fire({

@@ -133,6 +133,22 @@ class BookingController extends Controller
                 ]
             ]);
 
+            // Notify Admin about new booking
+            $admins = \App\Models\User::where('is_admin', 1)->get();
+            foreach ($admins as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'title' => 'New Ride Booking',
+                    'message' => Auth::user()->name . " has booked {$request->seats} seat(s) for a ride from {$ride->pickup_point} to {$ride->drop_point}.",
+                    'type' => 'new_ride_booking',
+                    'data' => [
+                        'booking_id' => $booking->id,
+                        'ride_id' => $ride->id,
+                        'passenger_name' => Auth::user()->name
+                    ]
+                ]);
+            }
+
             return response()->json([
                 'status' => true,
                 'message' => 'Ride booked successfully. Waiting for driver approval.',
