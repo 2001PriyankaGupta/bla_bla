@@ -43,6 +43,13 @@
         transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
+        cursor: pointer;
+    }
+
+    .stats-card.active {
+        border-color: var(--primary-color);
+        background: var(--primary-light);
+        box-shadow: 0 8px 25px rgba(25, 151, 34, 0.2);
     }
 
     .stats-card::before {
@@ -260,27 +267,27 @@
             <!-- Summary Stats -->
             <div class="row">
                 <div class="col-md-3">
-                    <div class="stats-card">
-                        <div class="stats-label">Total Payouts to Drivers</div>
-                        <div class="stats-number">₹ {{ number_format($driverPayouts, 2) }}</div>
+                    <div class="stats-card filter-card active" data-status="all">
+                        <div class="stats-label">All Transactions</div>
+                        <div class="stats-number">₹ {{ number_format($payments->sum('amount'), 2) }}</div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="stats-card">
-                        <div class="stats-label">Platform Commission</div>
-                        <div class="stats-number">₹ {{ number_format($platformCommission, 2) }}</div>
+                    <div class="stats-card filter-card" data-status="completed">
+                        <div class="stats-label">Success Payments</div>
+                        <div class="stats-number">₹ {{ number_format($payments->whereIn('status', ['captured', 'completed', 'success'])->sum('amount'), 2) }}</div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="stats-card">
+                    <div class="stats-card filter-card" data-status="refunded">
                         <div class="stats-label">Total Refunds</div>
                         <div class="stats-number">₹ {{ number_format($totalRefunds, 2) }}</div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="stats-card">
-                        <div class="stats-label">Tax Collected</div>
-                        <div class="stats-number">₹ {{ number_format($taxCollected, 2) }}</div>
+                    <div class="stats-card filter-card" data-status="failed">
+                        <div class="stats-label">Failed Payments</div>
+                        <div class="stats-number">₹ {{ number_format($payments->where('status', 'failed')->sum('amount'), 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -314,7 +321,7 @@
                         </thead>
                         <tbody>
                             @forelse($payments as $payment)
-                            <tr>
+                            <tr data-status="{{ (strtolower($payment->status) == 'captured' || strtolower($payment->status) == 'completed' || strtolower($payment->status) == 'success') ? 'completed' : strtolower($payment->status) }}">
                                 <td>{{ $payment->transaction_id ?? 'TXN-'.$payment->id }}</td>
                                 <td>
                                     @if($payment->booking && $payment->booking->ride)
@@ -454,9 +461,28 @@
                             "targets": [1, 2, 4, 5, 7]
                         } // Make other columns not sortable
                     ],
-                    "order": [
-                        [0, 'desc']
-                    ] // Default sort by Txn ID descending
+                    "order": [[0, 'desc']] // Default sort by Txn ID descending
+                });
+
+                // Custom filtering for payments based on cards
+                $.fn.dataTable.ext.search.push(
+                    function(settings, data, dataIndex) {
+                        var activeCard = $('.filter-card.active');
+                        if (activeCard.length === 0) return true;
+                        
+                        var filterValue = activeCard.data('status');
+                        if (filterValue === 'all') return true;
+                        
+                        // Get status from the row's data-status attribute
+                        var rowStatus = $(table.row(dataIndex).node()).attr('data-status');
+                        return rowStatus === filterValue;
+                    }
+                );
+
+                $('.filter-card').on('click', function() {
+                    $('.filter-card').removeClass('active');
+                    $(this).addClass('active');
+                    table.draw();
                 });
 
                 // Custom search functionality

@@ -266,6 +266,13 @@
         padding: 1.5rem;
         border: 1px solid var(--border-color);
         transition: transform 0.3s ease;
+        cursor: pointer;
+    }
+
+    .stats-card.active {
+        border-color: var(--primary-color);
+        background-color: rgba(40, 167, 69, 0.02);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
     .stats-card:hover {
@@ -323,7 +330,7 @@
         <!-- Statistics Row -->
         <div class="row mb-4 mt-4">
             <div class="col-xl-3 col-md-6">
-                <div class="stats-card">
+                <div class="stats-card filter-card" data-status="all">
                     <div class="stats-icon total">
                         <i class="fas fa-car fa-2x"></i>
                     </div>
@@ -332,7 +339,7 @@
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="stats-card">
+                <div class="stats-card filter-card" data-status="verified">
                     <div class="stats-icon verified">
                         <i class="fas fa-check-circle fa-2x"></i>
                     </div>
@@ -341,7 +348,7 @@
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="stats-card">
+                <div class="stats-card filter-card" data-status="pending">
                     <div class="stats-icon pending">
                         <i class="fas fa-clock fa-2x"></i>
                     </div>
@@ -350,7 +357,7 @@
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="stats-card">
+                <div class="stats-card filter-card" data-status="rejected">
                     <div class="stats-icon rejected">
                         <i class="fas fa-times-circle fa-2x"></i>
                     </div>
@@ -408,7 +415,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach($cars as $car)
-                                        <tr>
+                                        <tr data-status="{{ $car->license_verified }}">
                                             <td>
                                                 <span class="badge bg-light text-dark">#{{ str_pad($car->id, 5, '0', STR_PAD_LEFT) }}</span>
                                             </td>
@@ -722,14 +729,25 @@
             });
         });
 
-        // Filter by status
-        $('.status-filter').on('click', function() {
-            var status = $(this).data('status');
-            if (status === 'all') {
-                table.search('').columns().search('').draw();
-            } else {
-                table.columns(4).search(status).draw();
+        // Custom filtering for status based on cards
+        $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                var activeCard = $('.filter-card.active');
+                if (activeCard.length === 0) return true;
+                
+                var filterValue = activeCard.data('status');
+                if (filterValue === 'all') return true;
+                
+                // Get status from the row's data-status attribute
+                var rowStatus = $(table.row(dataIndex).node()).attr('data-status');
+                return rowStatus === filterValue;
             }
+        );
+
+        $('.filter-card').on('click', function() {
+            $('.filter-card').removeClass('active');
+            $(this).addClass('active');
+            table.draw();
         });
 
         // Add row highlight on hover

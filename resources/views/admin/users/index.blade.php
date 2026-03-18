@@ -62,8 +62,8 @@
 
     .stats-card {
         background: white;
-        border-radius: 20px;
-        padding: 24px;
+        border-radius: 12px;
+        padding: 16px;
         display: flex;
         align-items: center;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
@@ -79,18 +79,23 @@
     .stats-card:hover {
         transform: translateY(-8px);
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-card.active {
+        background: var(--primary-light);
         border-color: var(--primary-color);
+        box-shadow: 0 4px 15px rgba(25, 151, 34, 0.1);
     }
 
     .stats-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 15px;
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
-        margin-right: 20px;
+        font-size: 1.25rem;
+        margin-right: 15px;
         background: var(--primary-light);
         color: var(--primary-color);
         transition: all 0.4s ease;
@@ -107,7 +112,7 @@
     }
 
     .stats-number {
-        font-size: 1.8rem;
+        font-size: 1.4rem;
         font-weight: 800;
         color: #2c3e50;
         margin-bottom: 2px;
@@ -116,10 +121,10 @@
 
     .stats-label {
         color: var(--secondary-color);
-        font-size: 0.85rem;
+        font-size: 0.75rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
     }
 
     /* Enhanced Filter Section */
@@ -416,10 +421,6 @@
         display: none !important;
     }
 
-    
-
-    
-
     /* Search Box Premium Styling */
     .search-box-wrapper {
         position: relative;
@@ -574,112 +575,81 @@
             </div>
         </div>
 
-        <!-- Statistics Cards -->
-        <div class="row">
-            <div class="col-md-3">
-                <a href="{{ route('admin.users.index') }}" class="text-decoration-none">
-                    <div class="stats-card">
-                        <div class="stats-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="stats-info">
-                            <div class="stats-number">{{ $stats['total'] }}</div>
-                            <div class="stats-label">Total Platform Users</div>
-                        </div>
+        <!-- Statistics Cards (Clickable for filtering) -->
+        <div class="row row-cols-1 row-cols-md-5 g-3 mb-4">
+            <div class="col">
+                <div class="stats-card filter-card active" data-status="all">
+                    <div class="stats-icon">
+                        <i class="fas fa-users"></i>
                     </div>
-                </a>
+                    <div class="stats-info">
+                        <div class="stats-number">{{ $stats['total'] }}</div>
+                        <div class="stats-label">All Users</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="col-md-3">
-                <a href="{{ route('admin.users.index', ['status' => 'active']) }}" class="text-decoration-none">
-                    <div class="stats-card">
-                        <div class="stats-icon" style="background: #e8f5e9; color: #2e7d32;">
-                            <i class="fas fa-user-check"></i>
-                        </div>
-                        <div class="stats-info">
-                            <div class="stats-number">{{ $stats['active'] }}</div>
-                            <div class="stats-label">Active Users</div>
-                        </div>
+            <div class="col">
+                <div class="stats-card filter-card" data-status="active">
+                    <div class="stats-icon" style="background: #e8f5e9; color: #2e7d32;">
+                        <i class="fas fa-user-check"></i>
                     </div>
-                </a>
+                    <div class="stats-info">
+                        <div class="stats-number">{{ $stats['active'] }}</div>
+                        <div class="stats-label">Active Users</div>
+                    </div>
+                </div>
             </div>
             
-            <div class="col-md-3">
-                <a href="{{ route('admin.users.index', ['type' => 'driver']) }}" class="text-decoration-none">
-                    <div class="stats-card">
-                        <div class="stats-icon" style="background: #fff3e0; color: #ef6c00;">
-                            <i class="fas fa-user-clock"></i>
-                        </div>
-                        <div class="stats-info">
-                            <div class="stats-number">{{ $stats['drivers'] }}</div>
-                            <div class="stats-label">Total Drivers</div>
-                        </div>
+            <div class="col">
+                <div class="stats-card filter-card" data-status="inactive">
+                    <div class="stats-icon" style="background: #fdeaeb; color: #e74c3c;">
+                        <i class="fas fa-user-times"></i>
                     </div>
-                </a>
-            </div>
-
-            <div class="col-md-3">
-                <a href="{{ route('admin.users.index', ['type' => 'passenger']) }}" class="text-decoration-none">
-                    <div class="stats-card">
-                        <div class="stats-icon" style="background: #e3f2fd; color: #1565c0;">
-                            <i class="fas fa-user-friends"></i>
-                        </div>
-                        <div class="stats-info">
-                            <div class="stats-number">{{ $stats['passengers'] }}</div>
-                            <div class="stats-label">Total Passengers</div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        <!-- Enhanced Filter & Search Section -->
-        <div class="filter-section">
-            <div class="row align-items-center">
-                <div class="col-lg-8">
-                    <div class="d-flex align-items-center mb-3 mb-lg-0">
-                        <div class="filter-header border-0 mb-0 p-0 me-4">
-                            <i class="fas fa-filter"></i>
-                            <h5 class="mb-0">Filter Status:</h5>
-                        </div>
-                        <div class="filter-options">
-                            <div class="filter-option">
-                                <input type="radio" name="status" id="status-all" value="all" checked>
-                                <label for="status-all">
-                                    <i class="fas fa-users-cog"></i> All
-                                </label>
-                            </div>
-                            <div class="filter-option">
-                                <input type="radio" name="status" id="status-active" value="active">
-                                <label for="status-active">
-                                    <i class="fas fa-check-circle"></i> Active
-                                </label>
-                            </div>
-                            <div class="filter-option">
-                                <input type="radio" name="status" id="status-inactive" value="inactive">
-                                <label for="status-inactive">
-                                    <i class="fas fa-times-circle"></i> Inactive
-                                </label>
-                            </div>
-                        </div>
+                    <div class="stats-info">
+                        <div class="stats-number">{{ $stats['inactive'] }}</div>
+                        <div class="stats-label">Inactive Users</div>
                     </div>
                 </div>
-                <div class="col-lg-4">
-                    <div class="search-box-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="customSearchInput" class="form-control" placeholder="Quick search users...">
-                        <button id="customSearchBtn" class="search-btn">
-                            <i class="fas fa-arrow-right"></i>
-                        </button>
+            </div>
+
+            <div class="col">
+                <div class="stats-card filter-card" data-type="driver">
+                    <div class="stats-icon" style="background: #fff3e0; color: #ef6c00;">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                    <div class="stats-info">
+                        <div class="stats-number">{{ $stats['drivers'] }}</div>
+                        <div class="stats-label">Total Drivers</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="stats-card filter-card" data-type="passenger">
+                    <div class="stats-icon" style="background: #e3f2fd; color: #1565c0;">
+                        <i class="fas fa-user-friends"></i>
+                    </div>
+                    <div class="stats-info">
+                        <div class="stats-number">{{ $stats['passengers'] }}</div>
+                        <div class="stats-label">Total Passengers</div>
                     </div>
                 </div>
             </div>
         </div>
-
-
 
         <!-- Users Table -->
         <div class="user-table">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0" style="color: #2c3e50; font-weight: 700;">User List</h5>
+                <div class="search-box-wrapper" style="max-width: 300px; width: 100%; margin: 0;">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="customSearchInput" class="form-control" placeholder="Quick search users...">
+                    <button id="customSearchBtn" class="search-btn">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
             <div class="table-responsive">
                 <table class="table table-hover mb-0" id="usersTable">
                     <thead>
@@ -694,7 +664,7 @@
                     </thead>
                     <tbody>
                         @foreach ($users as $user)
-                            <tr>
+                            <tr data-status="{{ $user->status }}" data-user-type="{{ $user->user_type }}">
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="position-relative">
@@ -810,30 +780,29 @@
             // Handle initial filtering from URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             const statusParam = urlParams.get('status');
-            const typeParam = urlParams.get('type');
             
+            // Filter state
+            let currentFilter = {
+                status: statusParam || 'all',
+                type: 'all'
+            };
+
             if (statusParam) {
-                $(`input[name="status"][value="${statusParam}"]`).prop('checked', true);
+                $('.filter-card').removeClass('active');
+                $(`.filter-card[data-status="${statusParam}"]`).addClass('active');
             }
 
-            // Custom DataTable filter (Status + Type)
+            // Custom DataTable filter (Status and Type)
             $.fn.dataTable.ext.search.push(
                 function(settings, data, dataIndex) {
-                    const selectedStatus = $('input[name="status"]:checked').val();
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const typeParam = urlParams.get('type');
+                    // Get row data using data attributes
+                    const rowStatus = $(table.row(dataIndex).node()).attr('data-status');
+                    const rowType = $(table.row(dataIndex).node()).attr('data-user-type');
                     
-                    // Column Index Check: User Details(0), Email(1), Activity(2), Status(3), User Type(4)
-                    const rowStatus = data[3].toLowerCase(); // This matches the text content of column 3
-                    const rowType = data[4].toLowerCase();   // This matches the text content of hidden column 4
+                    let statusMatch = currentFilter.status === 'all' || rowStatus === currentFilter.status;
+                    let typeMatch = currentFilter.type === 'all' || rowType === currentFilter.type;
                     
-                    // Filter Status
-                    if (selectedStatus !== 'all' && !rowStatus.includes(selectedStatus)) return false;
-                    
-                    // Filter Type (from URL)
-                    if (typeParam && !rowType.includes(typeParam)) return false;
-                    
-                    return true;
+                    return statusMatch && typeMatch;
                 }
             );
 
@@ -856,15 +825,20 @@
                 }
             });
 
-            // Trigger filter on radio change
-            $('input[name="status"]').on('change', function() {
+            // Handle clicking on stat cards to filter
+            $('.filter-card').on('click', function() {
+                $('.filter-card').removeClass('active');
+                $(this).addClass('active');
+
+                // Determine filter from data attributes
+                const filterStatus = $(this).data('status');
+                const filterType = $(this).data('type');
+
+                currentFilter.status = filterStatus ? filterStatus : 'all';
+                currentFilter.type = filterType ? filterType : 'all';
+
                 table.draw();
             });
-
-            // Update statistics (optional now as we use server counts, but good for search)
-            function updateStatistics() {
-                // Not strictly needed with clickable cards, but can be used for search results
-            }
 
             // Add animation to table rows
             table.on('draw', function() {
@@ -986,7 +960,6 @@
                                 // Remove the row from the table
                                 $(form).closest('tr').fadeOut(500, function() {
                                     table.row($(this)).remove().draw();
-                                    updateStatistics();
                                 });
                             },
                             error: function(xhr) {

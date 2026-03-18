@@ -17,6 +17,7 @@ class UserController extends Controller
         $stats = [
             'total' => User::where('id', '!=', auth()->id())->count(),
             'active' => User::where('id', '!=', auth()->id())->where('status', 'active')->count(),
+            'inactive' => User::where('id', '!=', auth()->id())->where('status', 'inactive')->count(),
             'drivers' => User::where('id', '!=', auth()->id())->where('user_type', 'driver')->count(),
             'passengers' => User::where('id', '!=', auth()->id())->where('user_type', 'passenger')->count(),
         ];

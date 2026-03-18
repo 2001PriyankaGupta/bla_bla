@@ -43,76 +43,69 @@ class PaymentController extends Controller
         $fileName = 'payments_export_' . date('Y-m-d_H-i-s') . '.csv';
         $payments = \App\Models\Payment::with(['user', 'booking'])->latest()->get();
 
-        $headers = array(
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename=$fileName",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
-        );
-
         $columns = array('Transaction ID', 'Booking ID', 'User', 'Amount', 'Payment Method', 'Status', 'Date');
 
-        $callback = function() use($payments, $columns) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, $columns);
+        $file = fopen('php://temp', 'w');
+        fputcsv($file, $columns);
 
-            foreach ($payments as $payment) {
-                $row['Transaction ID']  = $payment->transaction_id ?? 'TXN-'.$payment->id;
-                $row['Booking ID']    = $payment->booking_id ?? 'N/A';
-                $row['User']    = $payment->user ? $payment->user->name : 'N/A';
-                $row['Amount']  = $payment->amount;
-                $row['Payment Method']  = $payment->payment_method;
-                $row['Status']  = $payment->status;
-                $row['Date']    = $payment->created_at;
+        foreach ($payments as $payment) {
+            $row['Transaction ID']  = $payment->transaction_id ?? 'TXN-'.$payment->id;
+            $row['Booking ID']    = $payment->booking_id ?? 'N/A';
+            $row['User']    = $payment->user ? $payment->user->name : 'N/A';
+            $row['Amount']  = $payment->amount;
+            $row['Payment Method']  = $payment->payment_method;
+            $row['Status']  = $payment->status;
+            $row['Date']    = $payment->created_at;
 
-                fputcsv($file, array($row['Transaction ID'], $row['Booking ID'], $row['User'], $row['Amount'], $row['Payment Method'], $row['Status'], $row['Date']));
-            }
+            fputcsv($file, array($row['Transaction ID'], $row['Booking ID'], $row['User'], $row['Amount'], $row['Payment Method'], $row['Status'], $row['Date']));
+        }
 
-            fclose($file);
-        };
+        rewind($file);
+        $csvData = stream_get_contents($file);
+        fclose($file);
 
-        return response()->stream($callback, 200, $headers);
+        return response($csvData)
+            ->header('Content-Type', 'text/csv')
+            ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"')
+            ->header('Pragma', 'no-cache')
+            ->header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
+            ->header('Expires', '0');
     }
 
     public function monthlyReport()
     {
         $fileName = 'monthly_report_' . date('F_Y') . '.csv';
         $payments = \App\Models\Payment::with(['user', 'booking'])
-                    ->whereMonth('created_at', date('m'))
-                    ->whereYear('created_at', date('Y'))
+                    ->where('created_at', '>=', \Carbon\Carbon::now()->subDays(30))
                     ->latest()
                     ->get();
 
-        $headers = array(
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename=$fileName",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
-        );
-
         $columns = array('Transaction ID', 'Booking ID', 'User', 'Amount', 'Payment Method', 'Status', 'Date');
 
-        $callback = function() use($payments, $columns) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, $columns);
+        $file = fopen('php://temp', 'w');
+        fputcsv($file, $columns);
 
-            foreach ($payments as $payment) {
-                $row['Transaction ID']  = $payment->transaction_id ?? 'TXN-'.$payment->id;
-                $row['Booking ID']    = $payment->booking_id ?? 'N/A';
-                $row['User']    = $payment->user ? $payment->user->name : 'N/A';
-                $row['Amount']  = $payment->amount;
-                $row['Payment Method']  = $payment->payment_method;
-                $row['Status']  = $payment->status;
-                $row['Date']    = $payment->created_at;
+        foreach ($payments as $payment) {
+            $row['Transaction ID']  = $payment->transaction_id ?? 'TXN-'.$payment->id;
+            $row['Booking ID']    = $payment->booking_id ?? 'N/A';
+            $row['User']    = $payment->user ? $payment->user->name : 'N/A';
+            $row['Amount']  = $payment->amount;
+            $row['Payment Method']  = $payment->payment_method;
+            $row['Status']  = $payment->status;
+            $row['Date']    = $payment->created_at;
 
-                fputcsv($file, array($row['Transaction ID'], $row['Booking ID'], $row['User'], $row['Amount'], $row['Payment Method'], $row['Status'], $row['Date']));
-            }
+            fputcsv($file, array($row['Transaction ID'], $row['Booking ID'], $row['User'], $row['Amount'], $row['Payment Method'], $row['Status'], $row['Date']));
+        }
 
-            fclose($file);
-        };
+        rewind($file);
+        $csvData = stream_get_contents($file);
+        fclose($file);
 
-        return response()->stream($callback, 200, $headers);
+        return response($csvData)
+            ->header('Content-Type', 'text/csv')
+            ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"')
+            ->header('Pragma', 'no-cache')
+            ->header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
+            ->header('Expires', '0');
     }
 }
