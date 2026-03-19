@@ -116,56 +116,40 @@ class BookingController extends Controller
                 'user_id' => Auth::id(),
                 'seats_booked' => $request->seats,
                 'total_price' => $totalPrice,
-                'status' => 'pending',
+                'status' => ($request->payment_method === 'online') ? 'awaiting_payment' : 'pending',
                 'special_requests' => $request->special_requests
             ]);
 
-            Log::info('Booking created', [
+            Log::info('New booking created', [
                 'booking_id' => $booking->id,
-                'ride_id' => $rideId,
-                'user_id' => Auth::id(),
-                'seats' => $request->seats
+                'payment_method' => $request->payment_method
             ]);
 
-            // Send notification to driver
-            $driverId = $ride->car->user_id;
-            Notification::create([
-                'user_id' => $driverId,
-                'title' => 'New Booking Request',
-                'message' => Auth::user()->name . ' has requested ' . $request->seats . ' seat(s) for your ride from ' . $ride->pickup_point . ' to ' . $ride->drop_point,
-                'type' => 'booking_request',
-                'data' => [
-                    'ride_id' => $ride->id,
-                    'booking_id' => $booking->id,
-                    'passenger_name' => Auth::user()->name
-                ]
-            ]);
+            // Only send notifications immediately for CASH payments
+            if ($request->payment_method !== 'online') {
+                if ($ride->car && $ride->car->user_id) {
+                    $driverId = $ride->car->user_id;
+                    Notification::create([
+                        'user_id' => $driverId,
+                        'title' => 'New Ride Booking',
+                        'message' => Auth::user()->name . ' has booked ' . $request->seats . ' seat(s) for your ride from ' . $ride->pickup_point . ' to ' . $ride->drop_point,
+                        'type' => 'new_booking_request',
+                        'data' => [
+                            'ride_id' => $rideId,
+                            'booking_id' => $booking->id,
+                            'passenger_name' => Auth::user()->name
+                        ]
+                    ]);
+                }
 
-            // Notify passenger confirming their request
-            Notification::create([
-                'user_id' => Auth::id(),
-                'title' => 'Booking Request Sent',
-                'message' => 'Your request for ' . $request->seats . ' seat(s) on the ride from ' . $ride->pickup_point . ' to ' . $ride->drop_point . ' has been sent to the driver.',
-                'type' => 'booking_placed',
-                'data' => [
-                    'ride_id' => $ride->id,
-                    'booking_id' => $booking->id,
-                    'seats' => $request->seats
-                ]
-            ]);
-
-            // Notify Admin about new booking
-            $admins = \App\Models\User::where('is_admin', 1)->get();
-            foreach ($admins as $admin) {
                 Notification::create([
-                    'user_id' => $admin->id,
-                    'title' => 'New Ride Booking',
-                    'message' => Auth::user()->name . " has booked {$request->seats} seat(s) for a ride from {$ride->pickup_point} to {$ride->drop_point}.",
-                    'type' => 'new_ride_booking',
+                    'user_id' => Auth::id(),
+                    'title' => 'Booking Request Sent',
+                    'message' => 'Your request to join the ride from ' . $ride->pickup_point . ' to ' . $ride->drop_point . ' has been sent to the driver for approval.',
+                    'type' => 'booking_request_sent',
                     'data' => [
-                        'booking_id' => $booking->id,
-                        'ride_id' => $ride->id,
-                        'passenger_name' => Auth::user()->name
+                        'ride_id' => $rideId,
+                        'booking_id' => $booking->id
                     ]
                 ]);
             }
@@ -181,11 +165,11 @@ class BookingController extends Controller
                         'date_time' => $ride->date_time,
                         'seats_booked' => $request->seats,
                         'total_price' => $totalPrice,
-                        'status' => 'pending'
+                        'status' => $booking->status
                     ],
                     'driver_contact' => [
                         'name' => $ride->car->user->name ?? 'Driver',
-                        'phone' => $ride->car->user->phone ?? null
+                        'phone' => $this->maskPhoneNumber($ride->car->user->phone ?? null)
                     ]
                 ]
             ]);
@@ -207,12 +191,20 @@ class BookingController extends Controller
     public function cancelBooking($bookingId)
     {
         try {
-            $booking = Booking::with('ride')->find($bookingId);
+            $booking = Booking::with(['ride.car'])->find($bookingId);
             
             if (!$booking) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Booking not found'
+                ], 404);
+            }
+
+            // Check if ride exists
+            if (!$booking->ride) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Associated ride not found'
                 ], 404);
             }
 
@@ -240,7 +232,9 @@ class BookingController extends Controller
 
             // Update user's cancelled rides count
             $user = Auth::user();
-            $user->increment('cancelled_rides');
+            if ($user) {
+                $user->increment('cancelled_rides');
+            }
 
             Log::info('Booking cancelled', [
                 'booking_id' => $bookingId,
@@ -249,18 +243,20 @@ class BookingController extends Controller
             ]);
 
             // Send notification to driver
-            $driverId = $booking->ride->car->user_id;
-            Notification::create([
-                'user_id' => $driverId,
-                'title' => 'Booking Cancelled',
-                'message' => Auth::user()->name . ' has cancelled their booking for your ride from ' . $booking->ride->pickup_point . ' to ' . $booking->ride->drop_point,
-                'type' => 'booking_cancelled_by_passenger',
-                'data' => [
-                    'ride_id' => $booking->ride_id,
-                    'booking_id' => $booking->id,
-                    'passenger_name' => Auth::user()->name
-                ]
-            ]);
+            if ($booking->ride->car && $booking->ride->car->user_id) {
+                $driverId = $booking->ride->car->user_id;
+                Notification::create([
+                    'user_id' => $driverId,
+                    'title' => 'Booking Cancelled',
+                    'message' => ($user->name ?? 'A passenger') . ' has cancelled their booking for your ride from ' . $booking->ride->pickup_point . ' to ' . $booking->ride->drop_point,
+                    'type' => 'booking_cancelled_by_passenger',
+                    'data' => [
+                        'ride_id' => $booking->ride_id,
+                        'booking_id' => $booking->id,
+                        'passenger_name' => $user->name ?? 'Passenger'
+                    ]
+                ]);
+            }
 
             return response()->json([
                 'status' => true,
@@ -273,7 +269,8 @@ class BookingController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Cancel booking error', [
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             
             return response()->json([
@@ -453,6 +450,7 @@ class BookingController extends Controller
             // Fetch passenger bookings
             $passengerBookings = Booking::with(['ride', 'ride.car', 'ride.driver'])
                 ->where('user_id', $user->id)
+                ->where('status', '!=', 'awaiting_payment')
                 ->get()
                 ->map(function($booking) {
                     return [
@@ -485,6 +483,7 @@ class BookingController extends Controller
                 ->whereHas('ride.car', function($q) use ($user) {
                     $q->where('user_id', $user->id);
                 })
+                ->where('status', '!=', 'awaiting_payment') // Hide unpaid bookings from driver
                 ->get()
                 ->map(function($booking) {
                     return [
@@ -728,7 +727,6 @@ class BookingController extends Controller
     }
 
     private function maskPhoneNumber($phone)
-// ... existing maskPhoneNumber code ...
     {
         if (!$phone) return null;
         
@@ -739,5 +737,41 @@ class BookingController extends Controller
         $masked = str_repeat('*', $length - 4) . $visible;
         
         return $masked;
+    }
+
+    public function deleteBooking($bookingId)
+    {
+        try {
+            $booking = Booking::find($bookingId);
+            
+            if (!$booking) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Booking not found'
+                ], 404);
+            }
+
+            // check ownership
+            if ($booking->user_id != Auth::id()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthorized'
+                ], 403);
+            }
+
+            // Hard delete to satisfy the "booking create nahi honi chahiye" requirement
+            $booking->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Booking deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

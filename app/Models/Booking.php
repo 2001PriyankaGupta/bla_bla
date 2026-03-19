@@ -18,12 +18,14 @@ class Booking extends Model
         'special_requests',
         'approved_at',
         'rejected_at',
+        'cancelled_at',
         'rejection_reason'
     ];
 
     protected $casts = [
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
+        'cancelled_at' => 'datetime',
         'total_price' => 'decimal:2'
     ];
 

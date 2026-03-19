@@ -93,6 +93,7 @@ Route::middleware(['api_auth'])->group(function () {
     // Booking routes (# Passenger Only)
     Route::post('/trip/{id}/book', [BookingController::class, 'bookRide']);
     Route::post('/booking/{id}/cancel', [BookingController::class, 'cancelBooking']);
+    Route::delete('/booking/{id}', [BookingController::class, 'deleteBooking']);
     Route::post('/booking/reduce-seats/{id}', [BookingController::class, 'reduceSeats']);
     # Driver Only
     Route::post('/booking/{id}/status', [BookingController::class, 'updateBookingStatus']);

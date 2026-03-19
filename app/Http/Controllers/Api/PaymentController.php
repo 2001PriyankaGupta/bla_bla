@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -114,6 +115,34 @@ class PaymentController extends Controller
             $booking->update([
                 'status' => 'confirmed', 
                 'approved_at' => now()
+            ]);
+
+            // Notify Driver
+            $ride = $booking->ride;
+            if ($ride && $ride->car && $ride->car->user_id) {
+                Notification::create([
+                    'user_id' => $ride->car->user_id,
+                    'title' => 'Booking Confirmed (Paid)',
+                    'message' => $user->name . ' has paid for ' . $booking->seats_booked . ' seat(s) for your ride from ' . $ride->pickup_point . ' to ' . $ride->drop_point . '.',
+                    'type' => 'booking_confirmed',
+                    'data' => [
+                        'ride_id' => $booking->ride_id,
+                        'booking_id' => $booking->id,
+                        'passenger_name' => $user->name
+                    ]
+                ]);
+            }
+
+            // Notify Passenger
+            Notification::create([
+                'user_id' => $user->id,
+                'title' => 'Ride Confirmed!',
+                'message' => 'Your payment was successful and your booking for the ride from ' . $ride->pickup_point . ' to ' . $ride->drop_point . ' is now confirmed.',
+                'type' => 'payment_success',
+                'data' => [
+                    'ride_id' => $booking->ride_id,
+                    'booking_id' => $booking->id
+                ]
             ]);
             
             return response()->json([
