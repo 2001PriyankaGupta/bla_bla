@@ -44,10 +44,15 @@ class CarController extends Controller
                 ], 401);
             }
 
-            $cars = Car::with('user') // eager load user
+            $cars = Car::with('user')
                     ->where('user_id', $user->id)
                     ->latest()
-                    ->get();
+                    ->get()
+                    ->map(function($car) {
+                        return $this->formatCarResponse($car);
+                    });
+            
+            Log::info('Fetched cars count: ' . count($cars));
 
             return response()->json([
                 'status' => true,
@@ -340,20 +345,16 @@ class CarController extends Controller
             'car_year' => $car->car_year,
             'car_color' => $car->car_color,
             'licence_plate' => $car->licence_plate,
-            'car_photo' => $car->car_photo ? Storage::url($car->car_photo) : null,
-            'driver_license_front' => $car->driver_license_front ? Storage::url($car->driver_license_front) : null,
-            'driver_license_back' => $car->driver_license_back ? Storage::url($car->driver_license_back) : null,
-            'verification_status' => $car->verification_status,
+            'car_photo' => $car->car_photo,
+            'driver_license_front' => $car->driver_license_front,
+            'driver_license_back' => $car->driver_license_back,
+            'license_verified' => $car->license_verified, // Use the correct field name from DB
             'verification_notes' => $car->verification_notes,
             'verified_by' => $car->verified_by,
             'verified_at' => $car->verified_at,
             'created_at' => $car->created_at,
             'updated_at' => $car->updated_at,
-            
-            // Debug info (optional - remove in production)
-            'car_photo_raw' => $car->car_photo,
-            'driver_license_front_raw' => $car->driver_license_front,
-            'driver_license_back_raw' => $car->driver_license_back,
+            'car_photo_url' => $car->car_photo ? (str_starts_with($car->car_photo, 'http') ? $car->car_photo : url('storage/' . $car->car_photo)) : null,
         ];
     }
 
@@ -374,7 +375,7 @@ class CarController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Car details fetched successfully',
-                'data' => $car
+                'data' => $this->formatCarResponse($car)
             ]);
 
         } catch (\Exception $e) {
