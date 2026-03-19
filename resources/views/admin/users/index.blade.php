@@ -546,9 +546,9 @@
     }
 
     .type-driver {
-        background: linear-gradient(135deg, #1565c0 0%, #1e88e5 100%);
+        background: linear-gradient(135deg, #1fa000 0%, #2ecc71 100%);
         color: white;
-        border: 1px solid #1565c0;
+        border: 1px solid #1fa000;
     }
 
     .type-passenger {
@@ -627,7 +627,7 @@
 
             <div class="col">
                 <div class="stats-card filter-card" data-type="passenger">
-                    <div class="stats-icon" style="background: #e3f2fd; color: #1565c0;">
+                    <div class="stats-icon" style="background: #e8f5e9; color: #1fa000;">
                         <i class="fas fa-user-friends"></i>
                     </div>
                     <div class="stats-info">

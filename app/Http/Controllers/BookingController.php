@@ -42,6 +42,14 @@ class BookingController extends Controller
                 ], 404);
             }
 
+            // Prevent driver from booking their own ride
+            if ($ride->driver_id == Auth::id() || ($ride->car && $ride->car->user_id == Auth::id())) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You cannot book your own ride.'
+                ], 403);
+            }
+
             // Check if ride is in the future
             if (Carbon::parse($ride->date_time)->isPast()) {
                 return response()->json([
@@ -130,6 +138,19 @@ class BookingController extends Controller
                     'ride_id' => $ride->id,
                     'booking_id' => $booking->id,
                     'passenger_name' => Auth::user()->name
+                ]
+            ]);
+
+            // Notify passenger confirming their request
+            Notification::create([
+                'user_id' => Auth::id(),
+                'title' => 'Booking Request Sent',
+                'message' => 'Your request for ' . $request->seats . ' seat(s) on the ride from ' . $ride->pickup_point . ' to ' . $ride->drop_point . ' has been sent to the driver.',
+                'type' => 'booking_placed',
+                'data' => [
+                    'ride_id' => $ride->id,
+                    'booking_id' => $booking->id,
+                    'seats' => $request->seats
                 ]
             ]);
 
@@ -346,6 +367,16 @@ class BookingController extends Controller
                 
                 $message = 'Booking confirmed successfully';
             } elseif ($request->status == 'completed') {
+                $today = Carbon::now()->startOfDay();
+                $tripDate = Carbon::parse($booking->ride->date_time)->startOfDay();
+                
+                if ($today->lt($tripDate)) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'You cannot mark the ride as completed before the scheduled date.'
+                    ], 400);
+                }
+
                 $updateData['completed_at'] = Carbon::now();
                 $message = 'Ride marked as completed';
             } else {

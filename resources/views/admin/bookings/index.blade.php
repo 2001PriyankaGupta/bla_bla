@@ -227,8 +227,8 @@
     }
 
     .stats-icon.total {
-        background: rgba(67, 97, 238, 0.1);
-        color: #4361ee;
+        background: rgba(40, 167, 69, 0.1);
+        color: #28a745;
     }
 
     .stats-number {
@@ -387,7 +387,7 @@
                                             </td>
                                             <td>
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 py-1 px-2">
+                                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 py-1 px-2">
                                                         {{ $booking->seats_booked }} Seats
                                                     </span>
                                                     <span class="fw-bold text-success" style="font-size: 14px;">

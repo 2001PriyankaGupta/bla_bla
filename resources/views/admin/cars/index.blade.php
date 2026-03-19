@@ -179,7 +179,7 @@
 
     .status-select:focus {
         border-color: var(--primary-color);
-        box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
     }
 
     .dataTables_wrapper .dataTables_length,
@@ -306,7 +306,7 @@
     }
 
     .stats-icon.total {
-        background: rgba(67, 97, 238, 0.1);
+        background: rgba(40, 167, 69, 0.1);
         color: var(--primary-color);
     }
 
@@ -648,7 +648,7 @@
                 text: 'Are you sure you want to update the status of this car?',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#4361ee',
+                confirmButtonColor: '#28a745',
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: 'Yes, update it!',
                 cancelButtonText: 'Cancel'

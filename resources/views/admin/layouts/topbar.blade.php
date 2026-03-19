@@ -82,26 +82,26 @@
                                 <h6 class="m-0 font-size-16"> Notifications </h6>
                             </div>
                             <div class="col-auto">
-                                <a href="{{ route('admin.notifications.index') }}" class="small"> View All</a>
+                                <a href="{{ route('admin.notifications.index') }}" class="small" style="color: #248907; font-weight: 600; text-decoration: none;"> View All</a>
                             </div>
                         </div>
                     </div>
                     <div data-simplebar style="max-height: 230px;">
                         @forelse($admin_notifications as $notification)
-                            <a href="javascript:void(0);" class="text-reset notification-item" onclick="markAsRead({{ $notification->id }})">
-                                <div class="d-flex align-items-center">
+                            <a href="javascript:void(0);" class="text-reset notification-item" onclick="markAsRead({{ $notification->id }})" style="display: block; padding: 12px 20px; border-bottom: 1px solid #f1f1f1;">
+                                <div class="d-flex align-items-start">
                                     <div class="flex-shrink-0 me-3">
-                                        <div class="avatar-xs">
-                                            <span class="avatar-title bg-primary rounded-circle font-size-16">
+                                        <div class="avatar-xs" style="width: 32px; height: 32px;">
+                                            <span class="avatar-title rounded-circle font-size-16" style="background-color: #248907;">
                                                 <i class="mdi mdi-bell-outline"></i>
                                             </span>
                                         </div>
                                     </div>
                                     <div class="flex-grow-1">
-                                        <h6 class="mb-1">{{ $notification->title }}</h6>
-                                        <div class="font-size-12 text-muted">
-                                            <p class="mb-1">{{ $notification->message }}</p>
-                                            <p class="mb-0"><i class="mdi mdi-clock-outline"></i> {{ $notification->created_at->diffForHumans() }}</p>
+                                        <h6 class="mb-1" style="font-size: 14px; font-weight: 600; color: #333;">{{ $notification->title }}</h6>
+                                        <div class="font-size-13 text-muted">
+                                            <p class="mb-1" style="line-height: 1.4; color: #666;">{{ $notification->message }}</p>
+                                            <p class="mb-0" style="font-size: 11px; margin-top: 4px; color: #999;"><i class="mdi mdi-clock-outline"></i> {{ $notification->created_at->diffForHumans() }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -109,7 +109,7 @@
                         @empty
                             <div class="p-3 text-center">
                                 <div class="avatar-md mx-auto mb-3">
-                                    <div class="avatar-title bg-light text-primary h3 rounded-circle">
+                                    <div class="avatar-title h3 rounded-circle" style="background-color: #e8f5e9; color: #248907;">
                                         <i class="mdi mdi-bell-off-outline"></i>
                                     </div>
                                 </div>
@@ -119,7 +119,7 @@
                     </div>
                     @if($unread_count > 0)
                         <div class="p-2 border-top d-grid">
-                            <a class="btn btn-sm btn-link font-size-14 text-center" href="javascript:void(0)" onclick="markAllAsRead()">
+                            <a class="btn btn-sm btn-link font-size-14 text-center" href="javascript:void(0)" onclick="markAllAsRead()" style="color: #248907; font-weight: 600; text-decoration: none;">
                                 <i class="mdi mdi-check-all me-1"></i> Mark all as read
                             </a>
                         </div>
