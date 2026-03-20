@@ -380,7 +380,7 @@
                                                     </div>
                                                     <div class="ride-meta mt-1">
                                                         <span class="badge bg-light text-muted border-0 p-0" style="font-size: 11px;">
-                                                            <i class="far fa-calendar-alt me-1"></i> {{ $booking->ride ? \Carbon\Carbon::parse($booking->ride->date_time)->format('d M, h:i A') : 'N/A' }}
+                                                            <i class="far fa-calendar-alt me-1"></i> {{ $booking->ride ? \Carbon\Carbon::parse($booking->ride->date_time)->format('d/m/Y h:i A') : 'N/A' }}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -413,7 +413,7 @@
                                             </td>
                                             <td>
                                                 <span class="text-muted" style="font-size: 12px;">
-                                                    {{ $booking->created_at->format('d M, Y') }}
+                                                    {{ $booking->created_at->format('d/m/Y') }}
                                                 </span>
                                             </td>
                                             <td class="text-center">

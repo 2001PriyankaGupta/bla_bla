@@ -88,14 +88,20 @@ class CarController extends Controller
                 'car_year' => 'required|integer|min:1990|max:' . (date('Y') + 1),
                 'car_color' => 'required|string|max:100',
                 'licence_plate' => 'required|string|unique:cars,licence_plate',
+                'rc_number' => 'required|string|unique:cars,rc_number',
                 'car_photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
                 'driver_license_front' => 'required|image|mimes:jpeg,png,jpg|max:5120',
                 'driver_license_back' => 'required|image|mimes:jpeg,png,jpg|max:5120',
+                'rc_front_image' => 'required|image|mimes:jpeg,png,jpg|max:5120',
+                'rc_back_image' => 'required|image|mimes:jpeg,png,jpg|max:5120',
             ], [
                 'licence_plate.unique' => 'This licence plate is already registered.',
+                'rc_number.unique' => 'This RC number is already registered.',
                 'car_photo.required' => 'Car photo is required.',
                 'driver_license_front.required' => 'Driver license front photo is required.',
                 'driver_license_back.required' => 'Driver license back photo is required.',
+                'rc_front_image.required' => 'RC front photo is required.',
+                'rc_back_image.required' => 'RC back photo is required.',
             ]);
 
             if ($validator->fails()) {
@@ -107,7 +113,7 @@ class CarController extends Controller
             }
 
             $carData = $request->only([
-                'car_make', 'car_model', 'car_year', 'car_color', 'licence_plate'
+                'car_make', 'car_model', 'car_year', 'car_color', 'licence_plate', 'rc_number'
             ]);
             $carData['user_id'] = $user->id;
 
@@ -124,6 +130,8 @@ class CarController extends Controller
             $carData['car_photo'] = $uploadImage($request->file('car_photo'), 'car_photos');
             $carData['driver_license_front'] = $uploadImage($request->file('driver_license_front'), 'driver_licenses');
             $carData['driver_license_back'] = $uploadImage($request->file('driver_license_back'), 'driver_licenses');
+            $carData['rc_front_image'] = $uploadImage($request->file('rc_front_image'), 'rc_documents');
+            $carData['rc_back_image'] = $uploadImage($request->file('rc_back_image'), 'rc_documents');
 
             Log::info('Creating car with data:', $carData);
 
@@ -191,14 +199,20 @@ class CarController extends Controller
                 'car_year' => 'sometimes|required|integer|min:1990|max:' . (date('Y') + 1),
                 'car_color' => 'sometimes|required|string|max:100',
                 'licence_plate' => 'sometimes|required|string|unique:cars,licence_plate,' . $id,
+                'rc_number' => 'sometimes|required|string|unique:cars,rc_number,' . $id,
                 'car_photo' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:5120',
                 'driver_license_front' => 'sometimes|image|mimes:jpeg,png,jpg|max:5120',
                 'driver_license_back' => 'sometimes|image|mimes:jpeg,png,jpg|max:5120',
+                'rc_front_image' => 'sometimes|image|mimes:jpeg,png,jpg|max:5120',
+                'rc_back_image' => 'sometimes|image|mimes:jpeg,png,jpg|max:5120',
             ], [
                 'licence_plate.unique' => 'This licence plate is already registered.',
+                'rc_number.unique' => 'This RC number is already registered.',
                 'car_photo.image' => 'Car photo must be a valid image file.',
                 'driver_license_front.image' => 'Driver license front must be a valid image file.',
                 'driver_license_back.image' => 'Driver license back must be a valid image file.',
+                'rc_front_image.image' => 'RC front must be a valid image file.',
+                'rc_back_image.image' => 'RC back must be a valid image file.',
             ]);
 
             if ($validator->fails()) {
@@ -210,7 +224,7 @@ class CarController extends Controller
             }
 
             $carData = $request->only([
-                'car_make', 'car_model', 'car_year', 'car_color', 'licence_plate'
+                'car_make', 'car_model', 'car_year', 'car_color', 'licence_plate', 'rc_number'
             ]);
 
             $resetVerification = false;
@@ -268,6 +282,16 @@ class CarController extends Controller
                 $carData['verification_notes'] = null;
                 $carData['verified_by'] = null;
                 $carData['verified_at'] = null;
+                $resetVerification = true;
+            }
+
+            if ($request->hasFile('rc_front_image')) {
+                $carData['rc_front_image'] = $uploadImage($request->file('rc_front_image'), 'rc_documents', $car->rc_front_image);
+                $resetVerification = true;
+            }
+
+            if ($request->hasFile('rc_back_image')) {
+                $carData['rc_back_image'] = $uploadImage($request->file('rc_back_image'), 'rc_documents', $car->rc_back_image);
                 $resetVerification = true;
             }
 
@@ -348,6 +372,9 @@ class CarController extends Controller
             'car_photo' => $car->car_photo,
             'driver_license_front' => $car->driver_license_front,
             'driver_license_back' => $car->driver_license_back,
+            'rc_number' => $car->rc_number,
+            'rc_front_image' => $car->rc_front_image,
+            'rc_back_image' => $car->rc_back_image,
             'license_verified' => $car->license_verified, // Use the correct field name from DB
             'verification_notes' => $car->verification_notes,
             'verified_by' => $car->verified_by,
@@ -474,7 +501,9 @@ class CarController extends Controller
         $files = [
             $car->car_photo,
             $car->driver_license_front,
-            $car->driver_license_back
+            $car->driver_license_back,
+            $car->rc_front_image,
+            $car->rc_back_image
         ];
 
         foreach ($files as $file) {

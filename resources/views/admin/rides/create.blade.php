@@ -1,6 +1,6 @@
 @extends('admin.layouts.master')
 
-@section('title', 'Edit Ride #' . $ride->id)
+@section('title', 'Create New Ride')
 
 @section('content')
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -56,17 +56,11 @@
     .text-primary {
         color: var(--primary-green) !important;
     }
-    .border-left-info {
-        border-left: .25rem solid var(--secondary-green) !important;
-    }
-    .text-info {
-        color: var(--secondary-green) !important;
-    }
 </style>
 
 <div class="container-fluid mt-4">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Edit Ride</h1>
+        <h1 class="h3 mb-0 text-gray-800">Create New Ride</h1>
         <a href="{{ route('admin.rides.index') }}" class="btn btn-sm btn-outline-success shadow-sm">
             <i class="fas fa-arrow-left fa-sm"></i> Back to List
         </a>
@@ -76,19 +70,18 @@
         <div class="col-lg-10">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Edit Ride Details</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">New Ride Details</h6>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('admin.rides.update', $ride->id) }}" method="POST">
+                    <form action="{{ route('admin.rides.store') }}" method="POST" id="createRideForm">
                         @csrf
-                        @method('PUT')
 
                         <div class="row mb-4">
                             <div class="col-md-6 position-relative">
                                 <label class="form-label">Pickup Point</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fas fa-map-marker-alt text-success"></i></span>
-                                    <input type="text" name="pickup_point" id="pickup_point" class="form-control" value="{{ old('pickup_point', $ride->pickup_point) }}" required autocomplete="off">
+                                    <input type="text" name="pickup_point" id="pickup_point" class="form-control location-input" placeholder="Start City" required autocomplete="off">
                                 </div>
                                 <div id="pickup-suggestions" class="suggestions-container"></div>
                             </div>
@@ -96,7 +89,7 @@
                                 <label class="form-label">Drop Point</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fas fa-flag-checkered text-danger"></i></span>
-                                    <input type="text" name="drop_point" id="drop_point" class="form-control" value="{{ old('drop_point', $ride->drop_point) }}" required autocomplete="off">
+                                    <input type="text" name="drop_point" id="drop_point" class="form-control location-input" placeholder="End City" required autocomplete="off">
                                 </div>
                                 <div id="drop-suggestions" class="suggestions-container"></div>
                             </div>
@@ -105,13 +98,14 @@
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <label class="form-label">Date & Time</label>
-                                <input type="datetime-local" name="date_time" class="form-control" value="{{ old('date_time', date('Y-m-d\TH:i', strtotime($ride->date_time ?? now()))) }}" required>
+                                <input type="datetime-local" name="date_time" class="form-control" required value="{{ date('Y-m-d\TH:i', strtotime('+1 day')) }}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Car & Driver</label>
                                 <select name="car_id" class="form-select" required>
+                                    <option value="" disabled selected>Select a Driver & Car</option>
                                     @foreach($cars as $car)
-                                        <option value="{{ $car->id }}" {{ $ride->car_id == $car->id ? 'selected' : '' }}>
+                                        <option value="{{ $car->id }}">
                                             {{ $car->car_make }} {{ $car->car_model }} ({{ $car->licence_plate }}) - {{ $car->user->name ?? 'No Driver' }}
                                         </option>
                                     @endforeach
@@ -122,17 +116,17 @@
                         <div class="row mb-4">
                             <div class="col-md-4">
                                 <label class="form-label">Total Seats</label>
-                                <input type="number" name="total_seats" class="form-control" value="{{ old('total_seats', $ride->total_seats) }}" min="1" required>
+                                <input type="number" name="total_seats" class="form-control" value="4" min="1" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Price per Seat (₹)</label>
-                                <input type="number" step="0.01" name="price_per_seat" class="form-control" value="{{ old('price_per_seat', $ride->price_per_seat) }}" required>
+                                <input type="number" step="0.01" name="price_per_seat" class="form-control" placeholder="500.00" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Luggage Allowed</label>
                                 <select name="luggage_allowed" class="form-select">
-                                    <option value="1" {{ $ride->luggage_allowed ? 'selected' : '' }}>Yes</option>
-                                    <option value="0" {{ !$ride->luggage_allowed ? 'selected' : '' }}>No</option>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
                                 </select>
                             </div>
                         </div>
@@ -140,36 +134,17 @@
                         <!-- Intermediate Stops -->
                         <div class="card bg-light border-0 mb-4">
                             <div class="card-header border-0 bg-light py-3 d-flex justify-content-between align-items-center" style="background:#f8faf9 !important; border-bottom: 1px solid #e1eaea;">
-                                <h6 class="m-0 font-weight-bold text-dark">Intermediate Stop Points</h6>
+                                <h6 class="m-0 font-weight-bold text-dark">Intermediate Stops (Optional)</h6>
                                 <button type="button" class="btn btn-sm btn-info" id="addStopPoint">
                                     <i class="fas fa-plus"></i> Add Stop
                                 </button>
                             </div>
                             <div class="card-body pt-0" style="background:#f8faf9;">
-                                @php $stopCount = 0; @endphp
                                 <div id="stopPointsContainer">
-                                    @if($ride->stopPoints && $ride->stopPoints->count() > 0)
-                                        @foreach($ride->stopPoints as $stop)
-                                            <div class="row g-2 mb-2 stop-point-row position-relative">
-                                                <div class="col-md-7">
-                                                    <input type="text" name="stop_points[{{ $stopCount }}][city_name]" class="form-control form-control-sm stop-input" placeholder="City Name" value="{{ $stop->city_name }}" required autocomplete="off">
-                                                    <div class="suggestions-container stop-suggestions" style="top: 32px;"></div>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <input type="number" step="0.01" name="stop_points[{{ $stopCount }}][price_from_pickup]" class="form-control form-control-sm" placeholder="Price" value="{{ $stop->price_from_pickup }}" required>
-                                                </div>
-                                                <div class="col-md-2 text-end">
-                                                    <button type="button" class="btn btn-sm btn-outline-danger remove-stop-point">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            @php $stopCount++; @endphp
-                                        @endforeach
-                                    @endif
+                                    <!-- Dynamic stops will move here -->
                                 </div>
-                                <div id="noStopsMessage" class="text-center py-3 {{ ($ride->stopPoints && $ride->stopPoints->count() > 0) ? 'd-none' : '' }}">
-                                    <small class="text-muted">No intermediate stops added yet.</small>
+                                <div id="noStopsMessage" class="text-center py-3">
+                                    <small class="text-muted">No intermediate stops added.</small>
                                 </div>
                             </div>
                         </div>
@@ -177,35 +152,16 @@
                         <div class="mb-3">
                             <label class="form-label">Status</label>
                             <select name="status" class="form-select">
-                                <option value="active" {{ $ride->status == 'active' ? 'selected' : '' }}>Active</option>
-                                <option value="completed" {{ $ride->status == 'completed' ? 'selected' : '' }}>Completed</option>
-                                <option value="cancelled" {{ $ride->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                <option value="inactive" {{ $ride->status == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
                             </select>
                         </div>
 
                         <div class="mt-4 text-end">
-                            <a href="{{ route('admin.rides.show', $ride->id) }}" class="btn btn-light px-4 border">Cancel</a>
-                            <button type="submit" class="btn btn-primary px-5 font-weight-bold">Update Ride Info</button>
+                            <button type="reset" class="btn btn-light px-4 border">Reset</button>
+                            <button type="submit" class="btn btn-primary px-5 font-weight-bold">Create Ride</button>
                         </div>
                     </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card shadow mb-4 border-left-info">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-info">Current Stats</h6>
-                </div>
-                <div class="card-body">
-                    <div class="mb-2"><strong>Bookings:</strong> {{ $ride->bookings->count() }}</div>
-                    <div class="mb-2"><strong>Confirmed Seats:</strong> {{ $ride->bookings->where('status', 'confirmed')->sum('seats_booked') }}</div>
-                    <div class="mb-2"><strong>Revenue:</strong> ₹{{ number_format($ride->bookings->where('status', 'confirmed')->sum('total_price'), 2) }}</div>
                 </div>
             </div>
         </div>
@@ -217,8 +173,9 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     const GOOGLE_MAPS_API_KEY = "{{ config('services.google.maps_api_key') }}";
-    let stopCount = {{ $stopCount }};
+    let stopCount = 0;
 
+    // Handle Stop Points addition
     $('#addStopPoint').on('click', function() {
         $('#noStopsMessage').addClass('d-none');
         const html = `
@@ -248,6 +205,7 @@
         }
     });
 
+    // Google Places Autocomplete logic for Admin
     function fetchSuggestions(input, resultsContainer) {
         const query = input.val();
         if (query.length < 3) {
@@ -296,6 +254,7 @@
         $(this).parent().hide();
     });
 
+    // Close suggestions on outside click
     $(document).on('click', function(e) {
         if (!$(e.target).closest('.position-relative').length) {
             $('.suggestions-container').hide();

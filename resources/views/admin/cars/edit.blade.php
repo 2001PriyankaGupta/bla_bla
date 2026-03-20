@@ -56,9 +56,16 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="licence_plate" class="form-label">License Plate <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="licence_plate" value="{{ $car->licence_plate }}" required>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="licence_plate" class="form-label">License Plate <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="licence_plate" value="{{ $car->licence_plate }}" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="rc_number" class="form-label">RC Number</label>
+                                <input type="text" class="form-control" name="rc_number" value="{{ $car->rc_number }}">
+                            </div>
                         </div>
 
                         <div class="row">
@@ -86,6 +93,27 @@
                                 @if($car->driver_license_back)
                                     <div class="mt-2">
                                         <img src="{{ Storage::url($car->driver_license_back) }}" alt="License Back" class="img-thumbnail" width="150">
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="rc_front_image" class="form-label">RC Front</label>
+                                <input type="file" class="form-control" name="rc_front_image" accept="image/*">
+                                @if($car->rc_front_image)
+                                    <div class="mt-2">
+                                        <img src="{{ Storage::url($car->rc_front_image) }}" alt="RC Front" class="img-thumbnail" width="150">
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="rc_back_image" class="form-label">RC Back</label>
+                                <input type="file" class="form-control" name="rc_back_image" accept="image/*">
+                                @if($car->rc_back_image)
+                                    <div class="mt-2">
+                                        <img src="{{ Storage::url($car->rc_back_image) }}" alt="RC Back" class="img-thumbnail" width="150">
                                     </div>
                                 @endif
                             </div>

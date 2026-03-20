@@ -4,31 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Ride;
 
-class TicketReply extends Model
+class StopPoint extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'ticket_id',
-        'user_id',
-        'message',
-        'is_internal'
+        'ride_id',
+        'city_name',
+        'price_from_pickup'
     ];
 
-    public function ticket()
+    public function ride()
     {
-        return $this->belongsTo(SupportTicket::class);
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Ride::class);
     }
 
     protected function serializeDate(\DateTimeInterface $date)
     {
         return $date->setTimezone(new \DateTimeZone(config('app.timezone', 'Asia/Kolkata')))->format('Y-m-d H:i:s');
     }
-
 }

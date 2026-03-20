@@ -307,7 +307,7 @@
                                     <div class="text-muted small">→ {{ $ride->drop_point }}</div>
                                 </td>
                                 <td>
-                                    <div class="fw-bold">{{ $ride->date_time->format('M d, Y') }}</div>
+                                    <div class="fw-bold">{{ $ride->date_time->format('d/m/Y') }}</div>
                                     <div class="text-muted small">{{ $ride->date_time->format('h:i A') }}</div>
                                 </td>
                                 <td>

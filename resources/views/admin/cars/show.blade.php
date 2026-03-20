@@ -49,7 +49,7 @@
                         <div class="col-sm-6">
                             <div>
                                 <p class="text-muted mb-2">Joined Date</p>
-                                <h5 class="font-size-15">{{ $car->user->created_at->format('d M, Y') }}</h5>
+                                <h5 class="font-size-15">{{ $car->user->created_at->format('d/m/Y') }}</h5>
                             </div>
                         </div>
                     </div>
@@ -78,7 +78,7 @@
                             @if($car->verified_at)
                             <tr>
                                 <th scope="row">Verified At :</th>
-                                <td>{{ $car->verified_at->format('d M, Y H:i A') }}</td>
+                                <td>{{ $car->verified_at->format('d/m/Y h:i A') }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Verified By :</th>
@@ -138,7 +138,13 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label text-muted">Created At</label>
-                            <h5 class="font-size-14">{{ $car->created_at->format('d M, Y H:i A') }}</h5>
+                            <h5 class="font-size-14">{{ $car->created_at->format('d/m/Y h:i A') }}</h5>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">RC Number</label>
+                            <h5 class="font-size-14">{{ $car->rc_number ?? 'N/A' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -180,6 +186,28 @@
                             </a>
                         @else
                             <div class="alert alert-warning">No license back photo</div>
+                        @endif
+                    </div>
+
+                    <div class="col-md-4 mb-4">
+                        <h5 class="font-size-14 mb-3">RC Front</h5>
+                        @if($car->rc_front_image)
+                            <a href="{{ Storage::url($car->rc_front_image) }}" target="_blank">
+                                <img src="{{ Storage::url($car->rc_front_image) }}" class="img-fluid rounded" alt="RC Front">
+                            </a>
+                        @else
+                            <div class="alert alert-warning">No RC front photo</div>
+                        @endif
+                    </div>
+                    
+                    <div class="col-md-4 mb-4">
+                        <h5 class="font-size-14 mb-3">RC Back</h5>
+                        @if($car->rc_back_image)
+                            <a href="{{ Storage::url($car->rc_back_image) }}" target="_blank">
+                                <img src="{{ Storage::url($car->rc_back_image) }}" class="img-fluid rounded" alt="RC Back">
+                            </a>
+                        @else
+                            <div class="alert alert-warning">No RC back photo</div>
                         @endif
                     </div>
                 </div>

@@ -50,4 +50,10 @@ class SupportTicket extends Model
             }
         });
     }
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->setTimezone(new \DateTimeZone(config('app.timezone', 'Asia/Kolkata')))->format('Y-m-d H:i:s');
+    }
+
 }

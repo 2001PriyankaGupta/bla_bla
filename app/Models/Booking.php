@@ -16,6 +16,8 @@ class Booking extends Model
         'total_price',
         'status',
         'special_requests',
+        'stop_point_id',
+        'drop_point_type',
         'approved_at',
         'rejected_at',
         'cancelled_at',
@@ -37,6 +39,11 @@ class Booking extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function stopPoint()
+    {
+        return $this->belongsTo(StopPoint::class);
     }
 
     public function driver()
@@ -68,4 +75,10 @@ class Booking extends Model
     {
         return $this->hasOne(Payment::class);
     }
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->setTimezone(new \DateTimeZone(config('app.timezone', 'Asia/Kolkata')))->format('Y-m-d H:i:s');
+    }
+
 }

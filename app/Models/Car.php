@@ -19,6 +19,9 @@ class Car extends Model
         'car_photo',
         'driver_license_front',
         'driver_license_back',
+        'rc_number',
+        'rc_front_image',
+        'rc_back_image',
         'license_verified',
         'verification_notes',
         'verified_by',
@@ -76,4 +79,10 @@ class Car extends Model
     }
 
     
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->setTimezone(new \DateTimeZone(config('app.timezone', 'Asia/Kolkata')))->format('Y-m-d H:i:s');
+    }
+
 }

@@ -326,7 +326,7 @@
                                             <td>
                                                 <span
                                                     class="{{ $isExpired ? 'expired' : ($isExpiringSoon ? 'expiring-soon' : '') }}">
-                                                    {{ $promo->expiry_date->format('M d, Y') }}
+                                                    {{ $promo->expiry_date->format('d/m/Y') }}
                                                 </span>
                                             </td>
                                             <td>

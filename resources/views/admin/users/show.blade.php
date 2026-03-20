@@ -402,12 +402,12 @@
 
                     <div class="info-item">
                         <span class="info-label">Member Since:</span>
-                        <span class="info-value">{{ $user->created_at->format('M d, Y') }}</span>
+                        <span class="info-value">{{ $user->created_at->format('d/m/Y') }}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Last Login:</span>
                         <span
-                            class="info-value">{{ $user->last_login_at ? $user->last_login_at->format('M d, Y H:i') : 'Never' }}</span>
+                            class="info-value">{{ $user->last_login_at ? $user->last_login_at->format('d/m/Y h:i A') : 'Never' }}</span>
                     </div>
                 </div>
 

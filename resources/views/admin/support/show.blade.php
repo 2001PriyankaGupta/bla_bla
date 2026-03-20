@@ -372,12 +372,12 @@
 
                             <div class="info-item">
                                 <div class="info-label">Created</div>
-                                <div class="info-value">{{ $ticket->created_at->format('M j, Y g:i A') }}</div>
+                                <div class="info-value">{{ $ticket->created_at->format('d/m/Y h:i A') }}</div>
                             </div>
 
                             <div class="info-item">
                                 <div class="info-label">Last Updated</div>
-                                <div class="info-value">{{ $ticket->updated_at->format('M j, Y g:i A') }}</div>
+                                <div class="info-value">{{ $ticket->updated_at->format('d/m/Y h:i A') }}</div>
                             </div>
                         </div>
 
@@ -423,7 +423,7 @@
                                     <img src="https://ui-avatars.com/api/?name={{ urlencode($ticket->user->name ?? 'Customer') }}&background=6c757d&color=fff"
                                         class="user-avatar" alt="">
                                     {{ $ticket->user->name ?? 'Customer' }}
-                                    <span class="message-time">{{ $ticket->created_at->format('M j, g:i A') }}</span>
+                                    <span class="message-time">{{ $ticket->created_at->format('d/m/Y h:i A') }}</span>
                                 </div>
                                 <div class="message-content">
                                     {{ $ticket->description ?? 'No description provided.' }}
@@ -441,7 +441,7 @@
                                         @if ($reply->user->user_type === 'admin')
                                             <span class="badge bg-success">Staff</span>
                                         @endif
-                                        <span class="message-time">{{ $reply->created_at->format('M j, g:i A') }}</span>
+                                        <span class="message-time">{{ $reply->created_at->format('d/m/Y h:i A') }}</span>
                                     </div>
                                     <div class="message-content">
                                         {{ $reply->message }}
@@ -519,7 +519,7 @@
 
                             <div class="info-item mb-2">
                                 <div class="info-label">Member Since</div>
-                                <div class="info-value">{{ $ticket->user->created_at->format('M j, Y') }}</div>
+                                <div class="info-value">{{ $ticket->user->created_at->format('d/m/Y') }}</div>
                             </div>
 
                             <div class="info-item">
@@ -601,7 +601,7 @@
 
                         <div class="info-item">
                             <div class="info-label">Created</div>
-                            <div class="info-value">{{ $ticket->created_at->format('M j, Y g:i A') }}</div>
+                            <div class="info-value">{{ $ticket->created_at->format('d/m/Y h:i A') }}</div>
                         </div>
                     </div>
                 </div>

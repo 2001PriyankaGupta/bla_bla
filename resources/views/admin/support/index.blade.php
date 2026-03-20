@@ -454,7 +454,7 @@
                                             <span class="text-muted">Unassigned</span>
                                         @endif
                                     </td>
-                                    <td>{{ $ticket->created_at->format('M j, Y') }}</td>
+                                    <td>{{ $ticket->created_at->format('d/m/Y') }}</td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
                                             <!-- View Button with Tooltip -->

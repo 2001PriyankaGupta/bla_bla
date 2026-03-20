@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\Ride;
 use App\Models\Notification;
+use App\Models\StopPoint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -107,8 +108,18 @@ class BookingController extends Controller
                 ], 400);
             }
 
-            // Calculate total price
-            $totalPrice = $ride->price_per_seat * $request->seats;
+            // Handle locations from request or fallback to ride defaults
+            $pickupPoint = $request->pickup_point ?? $ride->pickup_point;
+            $dropPoint = $request->drop_point ?? $ride->drop_point;
+
+            // Handle Stop Point pricing and location (Drop override)
+            if ($request->drop_point_type === 'stop' && $request->stop_point_id) {
+                $stopPoint = StopPoint::find($request->stop_point_id);
+                if ($stopPoint) {
+                    $totalPrice = $stopPoint->price_from_pickup * $request->seats;
+                    $dropPoint = $stopPoint->city_name;
+                }
+            }
 
             // Create booking
             $booking = Booking::create([
@@ -117,7 +128,11 @@ class BookingController extends Controller
                 'seats_booked' => $request->seats,
                 'total_price' => $totalPrice,
                 'status' => ($request->payment_method === 'online') ? 'awaiting_payment' : 'pending',
-                'special_requests' => $request->special_requests
+                'special_requests' => $request->special_requests,
+                'stop_point_id' => $request->stop_point_id,
+                'drop_point_type' => $request->drop_point_type,
+                'pickup_point' => $pickupPoint,
+                'drop_point' => $dropPoint,
             ]);
 
             Log::info('New booking created', [
@@ -132,7 +147,7 @@ class BookingController extends Controller
                     Notification::create([
                         'user_id' => $driverId,
                         'title' => 'New Ride Booking',
-                        'message' => Auth::user()->name . ' has booked ' . $request->seats . ' seat(s) for your ride from ' . $ride->pickup_point . ' to ' . $ride->drop_point,
+                        'message' => Auth::user()->name . ' has booked ' . $request->seats . ' seat(s) for your ride from ' . $pickupPoint . ' to ' . $dropPoint,
                         'type' => 'new_booking_request',
                         'data' => [
                             'ride_id' => $rideId,
@@ -145,7 +160,7 @@ class BookingController extends Controller
                 Notification::create([
                     'user_id' => Auth::id(),
                     'title' => 'Booking Request Sent',
-                    'message' => 'Your request to join the ride from ' . $ride->pickup_point . ' to ' . $ride->drop_point . ' has been sent to the driver for approval.',
+                    'message' => 'Your request to join the ride from ' . $pickupPoint . ' to ' . $dropPoint . ' has been sent to the driver for approval.',
                     'type' => 'booking_request_sent',
                     'data' => [
                         'ride_id' => $rideId,
@@ -160,8 +175,8 @@ class BookingController extends Controller
                 'data' => [
                     'booking_id' => $booking->id,
                     'ride_details' => [
-                        'pickup' => $ride->pickup_point,
-                        'drop' => $ride->drop_point,
+                        'pickup' => $pickupPoint,
+                        'drop' => $dropPoint,
                         'date_time' => $ride->date_time,
                         'seats_booked' => $request->seats,
                         'total_price' => $totalPrice,
@@ -456,14 +471,14 @@ class BookingController extends Controller
                     return [
                         'id' => $booking->id,
                         'user_type' => 'passenger',
-                        'time' => $booking->ride ? $booking->ride->start_time_formatted : 'N/A',
-                        'location' => $booking->ride ? $booking->ride->pickup_point : 'N/A',
-                        'destination' => $booking->ride ? $booking->ride->drop_point : 'N/A',
-                        'date_display' => $booking->ride && $booking->ride->date_time ? Carbon::parse($booking->ride->date_time)->format('M d, Y') : 'N/A',
+                        'time' => $booking->ride && $booking->ride->date_time ? Carbon::parse($booking->ride->date_time)->format('h:i A') : 'N/A',
+                        'location' => $booking->pickup_point ?? ($booking->ride ? $booking->ride->pickup_point : 'N/A'),
+                        'destination' => $booking->drop_point ?? ($booking->ride ? $booking->ride->drop_point : 'N/A'),
+                        'date_display' => $booking->ride && $booking->ride->date_time ? Carbon::parse($booking->ride->date_time)->format('d-M-Y') : 'N/A',
                         'price' => $booking->total_price ? '₹' . number_format($booking->total_price, 2) : '₹0.00',
                         'status' => $booking->status,
                         'seats_booked' => $booking->seats_booked,
-                        'booking_date' => $booking->created_at->format('M d, Y h:i A'),
+                        'booking_date' => $booking->created_at ? $booking->created_at->format('d-M-Y, h:i A') : 'N/A',
                         'driver_details' => $booking->ride && $booking->ride->car && $booking->ride->car->user ? [
                             'driver_name' => $booking->ride->car->user->name,
                             'driver_phone' => $booking->ride->car->user->phone,
@@ -492,14 +507,14 @@ class BookingController extends Controller
                         'passenger_name' => $booking->user ? $booking->user->name : 'N/A',
                         'passenger_email' => $booking->user ? $booking->user->email : 'N/A',
                         'passenger_phone' => $booking->user ? $booking->user->phone : 'N/A',
-                        'time' => $booking->ride ? $booking->ride->start_time_formatted : 'N/A',
-                        'location' => $booking->ride ? $booking->ride->pickup_point : 'N/A',
-                        'destination' => $booking->ride ? $booking->ride->drop_point : 'N/A',
-                        'date_display' => $booking->ride && $booking->ride->date_time ? Carbon::parse($booking->ride->date_time)->format('M d, Y') : 'N/A',
+                        'time' => $booking->ride && $booking->ride->date_time ? Carbon::parse($booking->ride->date_time)->format('h:i A') : 'N/A',
+                        'location' => $booking->pickup_point ?? ($booking->ride ? $booking->ride->pickup_point : 'N/A'),
+                        'destination' => $booking->drop_point ?? ($booking->ride ? $booking->ride->drop_point : 'N/A'),
+                        'date_display' => $booking->ride && $booking->ride->date_time ? Carbon::parse($booking->ride->date_time)->format('d-M-Y') : 'N/A',
                         'price' => $booking->total_price ? '₹' . number_format($booking->total_price, 2) : '₹0.00',
                         'status' => $booking->status,
                         'seats_booked' => $booking->seats_booked,
-                        'booking_date' => $booking->created_at->format('M d, Y h:i A'),
+                        'booking_date' => $booking->created_at ? $booking->created_at->format('d-M-Y, h:i A') : 'N/A',
                         'can_manage' => in_array($booking->status, ['pending', 'confirmed']),
                         'ride_details' => $booking->ride ? [
                             'ride_id' => $booking->ride->id,

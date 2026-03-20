@@ -51,6 +51,9 @@ class CarController extends Controller
             'car_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'driver_license_front' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'driver_license_back' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'rc_front_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'rc_back_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'rc_number' => 'nullable|string',
             'license_verified' => 'required|in:pending,verified,rejected',
         ]);
 
@@ -69,6 +72,16 @@ class CarController extends Controller
         if ($request->hasFile('driver_license_back')) {
             $path = $request->file('driver_license_back')->store('driver_licenses', 'public');
             $input['driver_license_back'] = $path;
+        }
+
+        if ($request->hasFile('rc_front_image')) {
+            $path = $request->file('rc_front_image')->store('rc_documents', 'public');
+            $input['rc_front_image'] = $path;
+        }
+
+        if ($request->hasFile('rc_back_image')) {
+            $path = $request->file('rc_back_image')->store('rc_documents', 'public');
+            $input['rc_back_image'] = $path;
         }
 
         if ($input['license_verified'] == 'verified') {
@@ -106,6 +119,9 @@ class CarController extends Controller
             'car_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'driver_license_front' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'driver_license_back' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'rc_front_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'rc_back_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'rc_number' => 'nullable|string',
             'license_verified' => 'required|in:pending,verified,rejected',
         ]);
 
@@ -143,20 +159,37 @@ class CarController extends Controller
             $input['driver_license_front'] = $car->driver_license_front;
         }
 
-        // Keep existing driver license back if no new one is uploaded
         if ($request->hasFile('driver_license_back')) {
-            // Delete old image from storage
             if ($car->driver_license_back) {
-                // Remove storage/ prefix if exists
                 $oldPath = preg_replace('/^\/?storage\//', '', $car->driver_license_back);
                 Storage::disk('public')->delete($oldPath);
             }
-            // Store new image
             $path = $request->file('driver_license_back')->store('driver_licenses', 'public');
             $input['driver_license_back'] = $path;
         } else {
-            // Keep the existing driver_license_back
             $input['driver_license_back'] = $car->driver_license_back;
+        }
+
+        if ($request->hasFile('rc_front_image')) {
+            if ($car->rc_front_image) {
+                $oldPath = preg_replace('/^\/?storage\//', '', $car->rc_front_image);
+                Storage::disk('public')->delete($oldPath);
+            }
+            $path = $request->file('rc_front_image')->store('rc_documents', 'public');
+            $input['rc_front_image'] = $path;
+        } else {
+            $input['rc_front_image'] = $car->rc_front_image;
+        }
+
+        if ($request->hasFile('rc_back_image')) {
+            if ($car->rc_back_image) {
+                $oldPath = preg_replace('/^\/?storage\//', '', $car->rc_back_image);
+                Storage::disk('public')->delete($oldPath);
+            }
+            $path = $request->file('rc_back_image')->store('rc_documents', 'public');
+            $input['rc_back_image'] = $path;
+        } else {
+            $input['rc_back_image'] = $car->rc_back_image;
         }
         
         // Handle verification status change
@@ -180,6 +213,12 @@ class CarController extends Controller
         }
         if ($car->driver_license_back) {
             Storage::disk('public')->delete($car->driver_license_back);
+        }
+        if ($car->rc_front_image) {
+            Storage::disk('public')->delete($car->rc_front_image);
+        }
+        if ($car->rc_back_image) {
+            Storage::disk('public')->delete($car->rc_back_image);
         }
 
         $car->delete();

@@ -26,6 +26,11 @@ class Ride extends Model
         'status' => 'string'
     ];
 
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->setTimezone(new \DateTimeZone(config('app.timezone', 'Asia/Kolkata')))->format('Y-m-d H:i:s');
+    }
+
     /**
      * Get the car for this ride
      */
@@ -55,6 +60,11 @@ class Ride extends Model
     public function bookings()
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function stopPoints()
+    {
+        return $this->hasMany(StopPoint::class);
     }
 
     /**

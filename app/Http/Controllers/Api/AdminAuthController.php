@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ForgotPasswordMail;
+use App\Mail\UserOtpMail;
 use App\Models\PasswordResetCode;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -79,16 +80,22 @@ class AdminAuthController extends Controller
             ]);
         }
 
-        // Generate JWT token
-        $token = JWTAuth::fromUser($user);
+        // Generate OTP
+        $otp = rand(100000, 999999);
+        $user->otp = $otp;
+        $user->otp_expires_at = Carbon::now()->addSeconds(60);
+        $user->save();
+
+        try {
+            Mail::to($user->email)->send(new UserOtpMail($otp));
+        } catch (\Exception $e) {
+            Log::error("OTP Mail Error: " . $e->getMessage());
+        }
 
         return response()->json([
-            'status' => 'true',
-            'message' => 'User registered successfully',
-            'user' => $user,
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60
+            'status' => 'pending_verification',
+            'message' => 'User registered. OTP sent to your email. Please verify.',
+            'email' => $user->email
         ], 201);
     }
 
@@ -126,9 +133,69 @@ class AdminAuthController extends Controller
             ], 403);
         }
 
+        // Generate OTP
+        $otp = rand(100000, 999999);
+        $user->otp = $otp;
+        $user->otp_expires_at = Carbon::now()->addSeconds(60);
+        $user->save();
+
+        try {
+            Mail::to($user->email)->send(new UserOtpMail($otp));
+        } catch (\Exception $e) {
+            Log::error("OTP Mail Error: " . $e->getMessage());
+        }
+
+        return response()->json([
+            'status' => 'pending_verification',
+            'message' => 'Login attempt successful. OTP sent to your email. Please verify.',
+            'email' => $user->email
+        ]);
+    }
+
+    public function verifyOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+            'otp' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'false',
+                'error' => $validator->errors()->first()
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if ($user->otp !== $request->otp) {
+            return response()->json([
+                'status' => 'false',
+                'message' => 'Invalid OTP code. Please check and try again.'
+            ], 400);
+        }
+
+        if (Carbon::now()->greaterThan($user->otp_expires_at)) {
+            return response()->json([
+                'status' => 'false',
+                'message' => 'Your OTP has expired, please resend OTP.'
+            ], 400);
+        }
+
+        // Clear OTP
+        $user->otp = null;
+        $user->otp_expires_at = null;
+        if (!$user->email_verified_at) {
+            $user->email_verified_at = Carbon::now();
+        }
+        $user->save();
+
+        // Generate Token
+        $token = JWTAuth::fromUser($user);
+
         return response()->json([
             'status' => 'true',
-            'message' => 'Login successful',
+            'message' => 'OTP verified successfully.',
             'user' => $user,
             'access_token' => $token,
             'token_type' => 'bearer',
@@ -144,6 +211,47 @@ class AdminAuthController extends Controller
             'status' => 'true',
             'message' => 'Logged out successfully'
         ]);
+    }
+
+    public function resendOtp(Request $request)
+    {
+        Log::info("Resend OTP request for email: " . $request->email);
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        if ($validator->fails()) {
+            Log::warning("Resend OTP Validation failed: " . $validator->errors()->first());
+            return response()->json([
+                'status' => 'false',
+                'error' => $validator->errors()->first()
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        // Generate new OTP
+        $otp = rand(100000, 999999);
+        $user->otp = $otp;
+        $user->otp_expires_at = Carbon::now()->addSeconds(60);
+        $user->save();
+
+        Log::info("Generated new OTP für {$user->email}: {$otp}");
+
+        try {
+            Mail::to($user->email)->send(new UserOtpMail($otp));
+            Log::info("OTP Mail sent successfully to " . $user->email);
+            return response()->json([
+                'status' => 'true',
+                'message' => 'A new OTP code has been sent to your email.'
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Resend OTP Mail Error: " . $e->getMessage());
+            return response()->json([
+                'status' => 'false',
+                'message' => 'Failed to send OTP. Please try again later.'
+            ], 500);
+        }
     }
 
     public function refresh()

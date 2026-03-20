@@ -99,7 +99,7 @@ class RideController extends Controller
                     'id' => $ride->id,
                     'from' => $ride->pickup_point,
                     'to' => $ride->drop_point,
-                    'date_time' => $ride->date_time,
+                    'date_time' => $ride->date_time->format('Y-m-d H:i:s'),
                     'seats' => $ride->total_seats,
                     'price' => $ride->price, // Price per seat? Wait, ride table has price_per_seat usually.
                     'price_per_seat' => $ride->price_per_seat, 
@@ -166,6 +166,9 @@ class RideController extends Controller
                 'pickup_point' => 'required|string|max:255',
                 'drop_point' => 'required|string|max:255',
                 'date_time' => 'required|date',
+                'stop_points' => 'nullable|array',
+                'stop_points.*.city_name' => 'required_with:stop_points|string',
+                'stop_points.*.price' => 'required_with:stop_points|numeric|min:0',
                 'total_seats' => 'required|integer|min:1',
                 'price_per_seat' => 'required|numeric|min:0',
                 'car_make' => 'required|string|exists:cars,car_make,user_id,' . $user->id, // Fix typo
@@ -219,6 +222,16 @@ class RideController extends Controller
                 'luggage_allowed' => $request->luggage_allowed,
                 'status' => $request->status ?? 'active',
             ]);
+            
+            // Handle Stop Points
+            if ($request->has('stop_points')) {
+                foreach ($request->stop_points as $stop) {
+                    $ride->stopPoints()->create([
+                        'city_name' => $stop['city_name'],
+                        'price_from_pickup' => $stop['price']
+                    ]);
+                }
+            }
 
             // Notify Admin about new ride creation
             $admins = \App\Models\User::where('is_admin', 1)->get();
@@ -236,12 +249,12 @@ class RideController extends Controller
                 ]);
             }
 
-            $ride->load('car');
-
+            $ride->load(['car', 'stopPoints']);
+            
             return response()->json([
                 'status' => true,
-                'message' => 'Ride created successfully'
-
+                'message' => 'Ride created successfully',
+                'data' => $ride
             ], 201);
 
         } catch (\Exception $e) {
@@ -265,7 +278,7 @@ class RideController extends Controller
                 ], 401);
             }
 
-            $ride = Ride::with(['car', 'car.user'])
+            $ride = Ride::with(['car', 'car.user', 'stopPoints'])
                        ->whereHas('car', function($query) use ($user) {
                            $query->where('user_id', $user->id);
                        })
@@ -321,6 +334,9 @@ class RideController extends Controller
                 'pickup_point' => 'sometimes|string|max:255', // sometimes instead of required
                 'drop_point' => 'sometimes|string|max:255',
                 'date_time' => 'sometimes|date',
+                'stop_points' => 'nullable|array',
+                'stop_points.*.city_name' => 'required_with:stop_points|string',
+                'stop_points.*.price' => 'required_with:stop_points|numeric|min:0',
                 'total_seats' => 'sometimes|integer|min:1',
                 'price_per_seat' => 'sometimes|numeric|min:0',
                 'car_make' => 'sometimes|string|exists:cars,car_make,user_id,' . $user->id, // sometimes for update
@@ -360,8 +376,21 @@ class RideController extends Controller
                 'luggage_allowed' => $request->luggage_allowed ?? $ride->luggage_allowed,
                 'status' => $request->status ?? $ride->status,
             ]);
-
-            $ride->load('car');
+            
+            // Update Stop Points
+            if ($request->has('stop_points')) {
+                // Delete existing ones
+                $ride->stopPoints()->delete();
+                // Add new ones
+                foreach ($request->stop_points as $stop) {
+                    $ride->stopPoints()->create([
+                        'city_name' => $stop['city_name'],
+                        'price_from_pickup' => $stop['price']
+                    ]);
+                }
+            }
+            
+            $ride->load(['car', 'stopPoints']);
 
             return response()->json([
                 'status' => true,
@@ -555,7 +584,7 @@ class RideController extends Controller
                         'ride_id' => $rideData->id,
                         'pickup' => $rideData->pickup_point,
                         'drop' => $rideData->drop_point,
-                        'date_time' => $rideData->date_time
+                        'date_time' => \Carbon\Carbon::parse($rideData->date_time)->format('Y-m-d H:i:s')
                     ],
                     'message_details' => [
                         'id' => $message->id,
@@ -624,19 +653,41 @@ class RideController extends Controller
             }
 
             // Build query
-            $query = Ride::with(['car', 'car.user'])
+            $query = Ride::with(['car', 'car.user', 'stopPoints'])
                 ->withSum(['bookings as booked_seats' => function($q) {
                     $q->whereIn('status', ['pending', 'confirmed']);
                 }], 'seats_booked')
                 ->where(function($q) use ($fromKeywords) {
-                    foreach ($fromKeywords as $word) {
-                        $q->orWhereRaw('LOWER(pickup_point) LIKE ?', ['%' . $word . '%']);
-                    }
+                    // Match main pickup point
+                    $q->where(function($sq) use ($fromKeywords) {
+                        foreach ($fromKeywords as $word) {
+                            $sq->orWhereRaw('LOWER(pickup_point) LIKE ?', ['%' . $word . '%']);
+                        }
+                    })
+                    // OR match any stop point as pickup
+                    ->orWhereHas('stopPoints', function($sq) use ($fromKeywords) {
+                        $sq->where(function($ssq) use ($fromKeywords) {
+                            foreach ($fromKeywords as $word) {
+                                $ssq->orWhereRaw('LOWER(city_name) LIKE ?', ['%' . $word . '%']);
+                            }
+                        });
+                    });
                 })
                 ->where(function($q) use ($toKeywords) {
-                    foreach ($toKeywords as $word) {
-                        $q->orWhereRaw('LOWER(drop_point) LIKE ?', ['%' . $word . '%']);
-                    }
+                    // Match main drop point
+                    $q->where(function($sq) use ($toKeywords) {
+                        foreach ($toKeywords as $word) {
+                            $sq->orWhereRaw('LOWER(drop_point) LIKE ?', ['%' . $word . '%']);
+                        }
+                    })
+                    // OR match any stop point as drop
+                    ->orWhereHas('stopPoints', function($sq) use ($toKeywords) {
+                        $sq->where(function($ssq) use ($toKeywords) {
+                            foreach ($toKeywords as $word) {
+                                $ssq->orWhereRaw('LOWER(city_name) LIKE ?', ['%' . $word . '%']);
+                            }
+                        });
+                    });
                 })
                 ->whereRaw('DATE(date_time) = ?', [$departingDate])
                 ->where('date_time', '>', now())
@@ -693,6 +744,44 @@ class RideController extends Controller
         }
     }
 
+    public function getLocationSuggestions(Request $request)
+    {
+        $query = $request->query('query', '');
+        
+        // Get unique cities from pickup_point, drop_point and stop_points
+        $pickupCities = Ride::where('pickup_point', 'LIKE', "%{$query}%")
+            ->where('status', 'active')
+            ->distinct()
+            ->pluck('pickup_point')
+            ->toArray();
+
+        $dropCities = Ride::where('drop_point', 'LIKE', "%{$query}%")
+            ->where('status', 'active')
+            ->distinct()
+            ->pluck('drop_point')
+            ->toArray();
+
+        $stopCities = \DB::table('stop_points')
+            ->where('city_name', 'LIKE', "%{$query}%")
+            ->distinct()
+            ->pluck('city_name')
+            ->toArray();
+
+        $allCities = array_unique(array_merge($pickupCities, $dropCities, $stopCities));
+        
+        $formatted = array_map(function($city) {
+            return [
+                'description' => $city,
+                'is_active_route' => true
+            ];
+        }, array_values($allCities));
+
+        return response()->json([
+            'status' => true,
+            'predictions' => array_slice($formatted, 0, 10)
+        ]);
+    }
+
     public function flexibleSearch(Request $request)
     {
         try {
@@ -710,10 +799,46 @@ class RideController extends Controller
                 ], 422);
             }
 
-            $query = Ride::with(['car', 'car.user'])
-                        ->where('pickup_point', $request->from) // Exact match
-                        ->where('drop_point', $request->to)     // Exact match
-                        ->where('date_time', '>', now()); // Only future rides
+            // Extract keywords for broader matching
+            $fromParts = explode(',', $request->from);
+            $fromKeyword = trim($fromParts[0]);
+            
+            $toParts = explode(',', $request->to);
+            $toKeyword = trim($toParts[0]);
+
+            $query = Ride::with(['car', 'car.user', 'stopPoints'])
+                        ->where('status', 'active')
+                        ->where('date_time', '>', now());
+
+            $query->where(function($q) use ($fromKeyword, $toKeyword) {
+                $q->where(function($qq) use ($fromKeyword, $toKeyword) {
+                    // Match main pickup and main drop
+                    $qq->where('pickup_point', 'LIKE', "%$fromKeyword%")
+                       ->where('drop_point', 'LIKE', "%$toKeyword%");
+                })
+                ->orWhere(function($qq) use ($fromKeyword, $toKeyword) {
+                    // Match main pickup and a stop point
+                    $qq->where('pickup_point', 'LIKE', "%$fromKeyword%")
+                       ->whereHas('stopPoints', function($sq) use ($toKeyword) {
+                           $sq->where('city_name', 'LIKE', "%$toKeyword%");
+                       });
+                })
+                ->orWhere(function($qq) use ($fromKeyword, $toKeyword) {
+                    // Match a stop point and main drop point
+                    $qq->where('drop_point', 'LIKE', "%$toKeyword%")
+                       ->whereHas('stopPoints', function($sq) use ($fromKeyword) {
+                           $sq->where('city_name', 'LIKE', "%$fromKeyword%");
+                       });
+                })
+                ->orWhere(function($qq) use ($fromKeyword, $toKeyword) {
+                    // Match two different stop points
+                    $qq->whereHas('stopPoints', function($sq) use ($fromKeyword) {
+                        $sq->where('city_name', 'LIKE', "%$fromKeyword%");
+                    })->whereHas('stopPoints', function($sq) use ($toKeyword) {
+                        $sq->where('city_name', 'LIKE', "%$toKeyword%");
+                    });
+                });
+            });
 
             // Add date filter if provided
             if ($request->has('departing') && $request->departing) {
@@ -979,32 +1104,32 @@ class RideController extends Controller
                     'booking_id' => $booking->id,
                     'booking_status' => $booking->status,
                     'ride_id' => $ride->id,
-                    'date' => Carbon::parse($ride->date_time)->format('D, M d'),
+                    'date' => Carbon::parse($ride->date_time)->format('d-M-Y'),
                     'departure_time' => Carbon::parse($ride->date_time)->format('h:i A'),
-                    'pickup_point' => $ride->pickup_point,
-                    'pickup_location' => $ride->pickup_point . ', India',
+                    'pickup_point' => $booking->pickup_point ?? $ride->pickup_point,
+                    'pickup_location' => ($booking->pickup_point ?? $ride->pickup_point) . ', India',
                     'arrival_time' => Carbon::parse($ride->date_time)->addMinutes(90)->format('h:i A'),
-                    'drop_point' => $ride->drop_point,
-                    'drop_location' => $ride->drop_point . ', India',
-                    'duration' => '1 hr 30 min',
-                    'distance' => '25 km',
+                    'drop_point' => $booking->drop_point ?? $ride->drop_point,
+                    'drop_location' => ($booking->drop_point ?? $ride->drop_point) . ', India',
+                    'duration' => 'Calculated...',
+                    'distance' => 'Calculated...',
                 ],
                 'booking_information' => [
                     'booking_reference' => 'BK-' . str_pad($booking->id, 6, '0', STR_PAD_LEFT),
                     'seats_booked' => $booking->seats_booked,
                     'total_price' => '₹' . number_format($booking->total_price, 2),
                     'booking_status' => ucfirst($booking->status),
-                    'booking_date' => Carbon::parse($booking->created_at)->format('M d, Y h:i A'),
+                    'booking_date' => Carbon::parse($booking->created_at)->format('d-M-Y, h:i A'),
                     'special_requests' => $booking->special_requests ?? 'No special requests',
                     'approved_at' => $booking->approved_at ? 
-                        Carbon::parse($booking->approved_at)->format('M d, Y h:i A') : 
+                        Carbon::parse($booking->approved_at)->format('d-M-Y, h:i A') : 
                         'Not approved yet',
                     'rejection_reason' => $booking->rejection_reason ?? 'N/A',
                     'has_reviewed' => $hasReviewed,
                     'my_review' => $myReview ? [
                         'rating' => $myReview->rating,
                         'comment' => $myReview->comment,
-                        'created_at' => $myReview->created_at->format('M d, Y')
+                        'created_at' => $myReview->created_at->format('d-M-Y')
                     ] : null
                 ],
                 
@@ -1275,7 +1400,8 @@ class RideController extends Controller
         $ride = Ride::with([
             'driver',   
             'car',
-            'bookings.user'
+            'bookings.user',
+            'stopPoints' // Load stop points
         ])->findOrFail($id);
         
         // Calculate statistics
@@ -1311,18 +1437,55 @@ class RideController extends Controller
                 'data'    => [
                     'ride_id' => $ride->id,
                     'status'  => $request->status,
-                    'updated_at' => now()->toDateTimeString()
                 ]
             ]);
         }
 
-        return redirect()->route('admin.rides.index')
-                        ->with('success', 'Ride status updated successfully.');
+        return redirect()->back()->with('success', 'Ride status updated successfully.');
+    }
+
+    public function create_ride()
+    {
+        $cars = Car::with('user')->get();
+        return view('admin.rides.create', compact('cars'));
+    }
+
+    public function store_ride(Request $request)
+    {
+        $request->validate([
+            'pickup_point' => 'required|string|max:255',
+            'drop_point' => 'required|string|max:255',
+            'date_time' => 'required|date',
+            'total_seats' => 'required|integer|min:1',
+            'price_per_seat' => 'required|numeric|min:0',
+            'car_id' => 'required|exists:cars,id',
+            'luggage_allowed' => 'required|boolean',
+            'status' => 'required|string|in:active,completed,cancelled,inactive',
+            'stop_points' => 'nullable|array',
+            'stop_points.*.city_name' => 'required_with:stop_points|string|max:255',
+            'stop_points.*.price_from_pickup' => 'required_with:stop_points|numeric|min:0'
+        ]);
+
+        $ride = Ride::create($request->all());
+
+        if ($request->has('stop_points')) {
+            foreach ($request->stop_points as $stopPointData) {
+                if (!empty($stopPointData['city_name'])) {
+                    $ride->stopPoints()->create([
+                        'city_name' => $stopPointData['city_name'],
+                        'price_from_pickup' => $stopPointData['price_from_pickup']
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->route('admin.rides.show', $ride->id)
+                        ->with('success', 'Ride created successfully.');
     }
 
     public function edit_ride($id)
     {
-        $ride = Ride::findOrFail($id);
+        $ride = Ride::with('stopPoints')->findOrFail($id);
         $cars = Car::with('user')->get();
         return view('admin.rides.edit', compact('ride', 'cars'));
     }
@@ -1339,10 +1502,28 @@ class RideController extends Controller
             'price_per_seat' => 'required|numeric|min:0',
             'car_id' => 'required|exists:cars,id',
             'luggage_allowed' => 'required|boolean',
-            'status' => 'required|string|in:active,completed,cancelled,inactive'
+            'status' => 'required|string|in:active,completed,cancelled,inactive',
+            'stop_points' => 'nullable|array',
+            'stop_points.*.city_name' => 'required_with:stop_points|string|max:255',
+            'stop_points.*.price_from_pickup' => 'required_with:stop_points|numeric|min:0'
         ]);
 
         $ride->update($request->all());
+
+        if ($request->has('stop_points')) {
+            // Remove existing stop points if not in the current list
+            $ride->stopPoints()->delete();
+            
+            // Add new stop points
+            foreach ($request->stop_points as $stopPointData) {
+                if (!empty($stopPointData['city_name'])) {
+                    $ride->stopPoints()->create([
+                        'city_name' => $stopPointData['city_name'],
+                        'price_from_pickup' => $stopPointData['price_from_pickup']
+                    ]);
+                }
+            }
+        }
 
         // Notify Driver
         if ($ride->driver) {

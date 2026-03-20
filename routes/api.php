@@ -28,6 +28,8 @@ Route::post('ping', function() {
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AdminAuthController::class, 'register']);
     Route::post('/login', [AdminAuthController::class, 'login']);
+    Route::post('/verify-otp', [AdminAuthController::class, 'verifyOtp']);
+    Route::post('/resend-otp', [AdminAuthController::class, 'resendOtp']);
     Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword']);
     Route::post('/verify-code', [AdminAuthController::class, 'verifyResetCode']);
     Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
@@ -38,6 +40,7 @@ Route::prefix('auth')->group(function () {
 // Public ride search routes
 Route::post('/search-ride', [RideController::class, 'searchRides']);
 Route::get('/flexible-search', [RideController::class, 'flexibleSearch']);
+Route::get('/locations/suggestions', [RideController::class, 'getLocationSuggestions']);
 Route::get('/{id}/seats', [RideController::class, 'getRideSeats']);
 
 // Public trip details

@@ -352,7 +352,7 @@
                                         <span class="status-badge bg-warning text-dark">{{ ucfirst($payment->status) }}</span>
                                     @endif
                                 </td>
-                                <td>{{ $payment->created_at->format('M d, Y H:i') }}</td>
+                                <td>{{ $payment->created_at->format('d/m/Y h:i A') }}</td>
                                 <td>
                                     <button class="action-btn btn-primary view-details-btn" 
                                         data-bs-toggle="modal" 
@@ -360,7 +360,7 @@
                                         data-transaction="{{ $payment->transaction_id ?? 'TXN-'.$payment->id }}"
                                         data-user="{{ $payment->user ? $payment->user->name : 'N/A' }}"
                                         data-amount="₹ {{ number_format($payment->amount, 2) }}"
-                                        data-date="{{ $payment->created_at->format('M d, Y H:i') }}"
+                                        data-date="{{ $payment->created_at->format('d/m/Y h:i A') }}"
                                         data-status="{{ $payment->status }}"
                                         data-ride="{{ $payment->booking && $payment->booking->ride ? 'RD-'.$payment->booking->ride->id : 'N/A' }}"
                                         data-method="{{ $payment->payment_method }}"
