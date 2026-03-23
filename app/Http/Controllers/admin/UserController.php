@@ -18,13 +18,19 @@ class UserController extends Controller
             'total' => User::where('id', '!=', auth()->id())->count(),
             'active' => User::where('id', '!=', auth()->id())->where('status', 'active')->count(),
             'inactive' => User::where('id', '!=', auth()->id())->where('status', 'inactive')->count(),
-            'drivers' => User::where('id', '!=', auth()->id())->where('user_type', 'driver')->count(),
-            'passengers' => User::where('id', '!=', auth()->id())->where('user_type', 'passenger')->count(),
+            // Count users who have AT LEAST 1 published ride
+            'drivers' => User::where('id', '!=', auth()->id())->has('rides')->count(),
+            // Count users who have AT LEAST 1 booking
+            'passengers' => User::where('id', '!=', auth()->id())->has('bookings')->count(),
         ];
 
         // Apply filters for the table data
         if ($request->has('type') && in_array($request->type, ['passenger', 'driver'])) {
-            $query->where('user_type', $request->type);
+            if ($request->type === 'driver') {
+                $query->has('rides');
+            } else {
+                $query->has('bookings');
+            }
         }
         
         if ($request->has('status') && in_array($request->status, ['active', 'inactive'])) {

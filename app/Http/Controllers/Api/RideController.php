@@ -674,10 +674,26 @@ class RideController extends Controller
 
                     if ($available >= $passengers) {
                         $rideData = $ride->toArray();
+                        
+                        // Calculate availability for each potential drop point FROM the search pickup
+                        $searchFromCity = $route[$fromIdx]['name'];
+                        $segmentAvailabilities = [];
+                        
+                        foreach ($route as $idx => $stop) {
+                            if ($idx > $fromIdx) {
+                                $segmentAvailabilities[] = [
+                                    'city_name' => $stop['name'],
+                                    'available_seats' => $ride->availableSeats($searchFromCity, $stop['name']),
+                                    'price' => max(0, $stop['price'] - $route[$fromIdx]['price'])
+                                ];
+                            }
+                        }
+
                         // 🚀 CRITICAL: Override top-level data for segment-specific UI
                         $rideData['available_seats'] = $available; 
                         $rideData['booked_seats'] = $ride->total_seats - $available;
                         $rideData['price_per_seat'] = (float)$segmentPrice;
+                        $rideData['stop_availabilities'] = $segmentAvailabilities;
                         
                         $rideData['search_segment'] = [
                             'pickup' => $route[$fromIdx]['name'],
@@ -1076,19 +1092,35 @@ class RideController extends Controller
             // Format the response with booking information
             $tripDetails = [
                 'trip_summary' => [
-                    'booking_id' => $booking->id,
-                    'booking_status' => $booking->status,
+                    'booking_id' => $booking ? $booking->id : null,
+                    'booking_status' => $booking ? $booking->status : null,
                     'ride_id' => $ride->id,
                     'date' => Carbon::parse($ride->date_time)->format('d-M-Y'),
                     'departure_time' => Carbon::parse($ride->date_time)->format('h:i A'),
                     'pickup_point' => $displayPickup,
-                'pickup_location' => $displayPickup . ($booking ? '' : ', India'),
-                'arrival_time' => Carbon::parse($ride->date_time)->addMinutes(90)->format('h:i A'),
-                'drop_point' => $displayDrop,
-                'drop_location' => $displayDrop . ($booking ? '' : ', India'),
+                    'pickup_location' => $displayPickup . ($booking ? '' : ', India'),
+                    'arrival_time' => Carbon::parse($ride->date_time)->addMinutes(90)->format('h:i A'),
+                    'drop_point' => $displayDrop,
+                    'drop_location' => $displayDrop . ($booking ? '' : ', India'),
                     'duration' => 'Calculated...',
                     'distance' => 'Calculated...',
+                    'available_seats' => $availableSeats,
+                    'total_seats' => $ride->total_seats,
+                    'price_per_seat' => $ride->price_per_seat,
                 ],
+                'stop_availabilities' => collect($ride->getFullRoute())->map(function($stop) use ($ride, $displayPickup) {
+                    return [
+                        'city_name' => $stop['name'],
+                        'available_seats' => $ride->availableSeats($displayPickup, $stop['name']),
+                        'price' => (float)$stop['price']
+                    ];
+                })->filter(function($stop) use ($ride, $displayPickup) {
+                    $route = $ride->getFullRoute();
+                    $cityNames = array_map(fn($r) => strtolower(trim(explode(',', $r['name'])[0])), $route);
+                    $fromIdx = array_search(strtolower(trim(explode(',', $displayPickup)[0])), $cityNames);
+                    $toIdx = array_search(strtolower(trim(explode(',', $stop['city_name'])[0])), $cityNames);
+                    return $fromIdx !== false && $toIdx !== false && $toIdx > $fromIdx;
+                })->values(),
                 'booking_information' => [
                     'booking_reference' => 'BK-' . str_pad($booking->id, 6, '0', STR_PAD_LEFT),
                     'seats_booked' => $booking->seats_booked,

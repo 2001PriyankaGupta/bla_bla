@@ -167,4 +167,23 @@ class User extends Authenticatable implements JWTSubject
         return $date->setTimezone(new \DateTimeZone(config('app.timezone', 'Asia/Kolkata')))->format('Y-m-d H:i:s');
     }
 
+    /* ---------------- DYNAMIC ROLE LOGIC ---------------- */
+    public function getCalculatedUserTypeAttribute()
+    {
+        // One car can have many rides, so if they have any rides they are a driver
+        $hasRides = $this->rides()->count() > 0;
+        $hasBookings = $this->bookings()->count() > 0;
+
+        if ($hasRides && $hasBookings) {
+            return 'both';
+        } elseif ($hasRides) {
+            return 'driver';
+        } elseif ($hasBookings) {
+            return 'passenger';
+        }
+        
+        // Fallback to the stored user_type if no activity yet
+        return $this->user_type ?: 'passenger';
+    }
+
 }

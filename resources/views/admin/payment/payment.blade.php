@@ -436,8 +436,8 @@
             document.addEventListener('DOMContentLoaded', function() {
                 // Initialize DataTable with proper configuration
                 const table = $('#paymentTable').DataTable({
-                    "pageLength": 10,
-                    "lengthMenu": [10, 25, 50, 100],
+                    "pageLength": 5,
+                    "lengthMenu": [5,10, 25, 50, 100],
                     "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
                     "language": {
                         "zeroRecords": "No matching transactions found",

@@ -460,7 +460,7 @@
         var table = $('#bookingsTable').DataTable({
             responsive: true,
             lengthChange: true,
-            lengthMenu: [10, 25, 50, 100],
+            lengthMenu: [5,10, 25, 50, 100],
             pageLength: 5,
             order: [[0, 'desc']],
             dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>tr<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',

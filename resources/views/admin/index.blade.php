@@ -32,8 +32,19 @@
         }
 
         .quick-actions .btn-primary {
-            background: #19b61e;
-            border-color: #19b61e;
+            background: #248907;
+            border-color: #248907;
+        }
+
+        .quick-actions .btn-outline-success {
+            color: #248907;
+            border-color: #248907;
+        }
+
+        .quick-actions .btn-outline-success:hover {
+            background-color: #248907;
+            border-color: #248907;
+            color: #fff;
         }
 
         .dashboard-card {
@@ -67,7 +78,7 @@
         }
 
         .dashboard-card .sub-label {
-            color: #17a256;
+            color: #248907;
             font-size: 13px;
             font-weight: 500;
         }
@@ -87,7 +98,7 @@
 
         .mini-chart-title {
             font-weight: 700;
-            color: #19b61e;
+            color: #248907;
             font-size: 20px;
             margin-bottom: 6px;
         }
@@ -95,7 +106,7 @@
         .mini-chart-trend {
             font-size: 16px;
             font-weight: 500;
-            color: #19b61e;
+            color: #248907;
         }
 
         .mini-chart-trend.negative {
@@ -115,7 +126,7 @@
 
         <!-- Quick Actions -->
         <div class="quick-actions mb-4">
-            <a href="{{ route('admin.rides.index') }}" class="btn btn-primary">View Ride</a>
+            <a href="{{ route('admin.rides.index') }}" class="btn" style="background-color: #248907;color:white;">View Ride</a>
             <a href="{{ route('admin.support.index') }}" class="btn btn-outline-success">View Pending Tickets</a>
             <!-- <a href="{{ route('admin.fare-promo.index') }}" class="btn btn-outline-success">Adjust Fare</a> -->
         </div>
@@ -216,13 +227,13 @@
                 labels: rideTrendsLabels,
                 datasets: [{
                     data: rideTrendsData,
-                    borderColor: '#19b61e',
-                    backgroundColor: 'rgba(25,182,30,0.10)',
+                    borderColor: '#248907',
+                    backgroundColor: 'rgba(36, 137, 7, 0.1)',
                     borderWidth: 2,
                     fill: true,
                     tension: 0.4,
                     pointRadius: 4,
-                    pointBackgroundColor: '#19b61e'
+                    pointBackgroundColor: '#248907'
                 }]
             },
             options: {
@@ -246,7 +257,7 @@
                 labels: peakHoursLabels,
                 datasets: [{
                     data: peakHoursData,
-                    backgroundColor: '#19b61e'
+                    backgroundColor: '#248907'
                 }]
             },
             options: {
@@ -270,7 +281,7 @@
                 labels: userGrowthLabels,
                 datasets: [{
                     data: userGrowthData,
-                    backgroundColor: '#19b61e'
+                    backgroundColor: '#248907'
                 }]
             },
             options: {

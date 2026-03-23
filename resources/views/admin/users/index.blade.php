@@ -557,6 +557,12 @@
         border: 1px solid #7b1fa2;
     }
 
+    .type-both {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        border: 1px solid #2c3e50;
+    }
+
     .type-badge:hover {
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -664,7 +670,7 @@
                     </thead>
                     <tbody>
                         @foreach ($users as $user)
-                            <tr data-status="{{ $user->status }}" data-user-type="{{ $user->user_type }}">
+                            <tr data-status="{{ $user->status }}" data-user-type="{{ $user->calculated_user_type }}">
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="position-relative">
@@ -682,16 +688,21 @@
                                 <td class="text-center">
                                     <div class="d-flex flex-column align-items-center">
                                         <span class="fw-bold text-primary mb-1">
-                                            {{ $user->user_type === 'driver' ? $user->rides_count : $user->bookings_count }}
+                                            @if($user->rides_count > 0 && $user->bookings_count > 0)
+                                                <span title="Published Rides">{{ $user->rides_count }}R</span> / <span title="Bookings">{{ $user->bookings_count }}B</span>
+                                            @else
+                                                {{ $user->rides_count > 0 ? $user->rides_count : ($user->bookings_count ?: 0) }}
+                                            @endif
                                         </span>
                                         <div class="d-flex align-items-center text-warning font-size-12">
                                             <i class="fas fa-star me-1"></i>
                                             <span class="fw-bold text-dark">
-                                                @if($user->user_type === 'driver')
-                                                    {{ number_format($user->driver_reviews_avg_rating ?? 0, 1) }}
-                                                @else
-                                                    {{ number_format($user->passenger_reviews_avg_rating ?? 0, 1) }}
-                                                @endif
+                                                @php
+                                                    $avgRating = ($user->rides_count > 0 && $user->bookings_count > 0) 
+                                                        ? (($user->driver_reviews_avg_rating ?? 0) + ($user->passenger_reviews_avg_rating ?? 0)) / 2
+                                                        : ($user->rides_count > 0 ? ($user->driver_reviews_avg_rating ?? 0) : ($user->passenger_reviews_avg_rating ?? 0));
+                                                @endphp
+                                                {{ number_format($avgRating, 1) }}
                                             </span>
                                         </div>
                                     </div>
@@ -702,12 +713,17 @@
                                         {{ ucfirst($user->status) }}
                                     </span>
                                 </td>
-                                <td class="text-center" data-search="{{ $user->user_type }}">
-                                    <span class="type-badge {{ $user->user_type === 'driver' ? 'type-driver' : 'type-passenger' }}">
-                                        @if($user->user_type === 'driver')
+                                <td class="text-center" data-search="{{ $user->calculated_user_type }}">
+                                    <span class="type-badge {{ 
+                                        $user->calculated_user_type === 'driver' ? 'type-driver' : 
+                                        ($user->calculated_user_type === 'passenger' ? 'type-passenger' : 'type-both') 
+                                    }}">
+                                        @if($user->calculated_user_type === 'driver')
                                             <i class="fas fa-car-side"></i> Driver
-                                        @else
+                                        @elseif($user->calculated_user_type === 'passenger')
                                             <i class="fas fa-user"></i> Passenger
+                                        @else
+                                            <i class="fas fa-user-tie"></i> Both
                                         @endif
                                     </span>
                                 </td>
@@ -760,8 +776,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const table = $('#usersTable').DataTable({
-                "pageLength": 10,
-                "lengthMenu": [10, 25, 50, 100],
+                "pageLength": 5,
+                "lengthMenu": [5, 10, 25, 50, 100],
+                "order": [], // Respect server-side order (descending by created_at)
                 "dom": 't<"d-flex justify-content-between align-items-center mt-4"lip>',
                 "language": {
                     "zeroRecords": "No matching users found",
@@ -800,7 +817,7 @@
                     const rowType = $(table.row(dataIndex).node()).attr('data-user-type');
                     
                     let statusMatch = currentFilter.status === 'all' || rowStatus === currentFilter.status;
-                    let typeMatch = currentFilter.type === 'all' || rowType === currentFilter.type;
+                    let typeMatch = currentFilter.type === 'all' || rowType === currentFilter.type || rowType === 'both';
                     
                     return statusMatch && typeMatch;
                 }

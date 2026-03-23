@@ -710,6 +710,7 @@
             @endif
             $('#ticketsTable').DataTable({
                 "pageLength": 5,
+                 "lengthMenu": [5,10, 25, 50, 100],
                 "order": [
                     [0, "desc"]
                 ],
@@ -726,6 +727,7 @@
 
             $('#faqsTable').DataTable({
                 "pageLength": 5,
+                 "lengthMenu": [5,10, 25, 50, 100],
                 "language": {
                     "search": "Search FAQs:",
                     "lengthMenu": "Show _MENU_ FAQs",

@@ -8,6 +8,22 @@ use Illuminate\Database\Eloquent\Model;
 class Ride extends Model
 {
     use HasFactory;
+    
+    protected static function booted()
+    {
+        static::deleting(function ($ride) {
+            // Delete associated stop points
+            $ride->stopPoints()->delete();
+            
+            // Delete associated bookings
+            $ride->bookings()->delete();
+            
+            // Delete associated messages
+            if (method_exists($ride, 'messages')) {
+                $ride->messages()->delete();
+            }
+        });
+    }
 
     protected $fillable = [
         'pickup_point',
@@ -108,11 +124,21 @@ class Ride extends Model
         $route = [];
         $route[] = ['name' => $this->pickup_point, 'price' => 0, 'sequence' => 0];
         
+        $normalize = function($name) {
+            return strtolower(trim(explode(',', $name)[0]));
+        };
+        $mainDrop = $normalize($this->drop_point);
+        $mainPickup = $normalize($this->pickup_point);
+
         foreach ($stops as $stop) {
+            $currentStop = $normalize($stop->city_name);
+            // Skip if it's the same as pickup or drop (already included)
+            if ($currentStop === $mainPickup || $currentStop === $mainDrop) continue;
+            
             $route[] = ['name' => $stop->city_name, 'price' => $stop->price_from_pickup, 'sequence' => $stop->sequence + 1];
         }
         
-        $route[] = ['name' => $this->drop_point, 'price' => $this->price_per_seat, 'sequence' => count($route)];
+        $route[] = ['name' => $this->drop_point, 'price' => (float)$this->price_per_seat, 'sequence' => count($route) + 1];
         
         return $route;
     }
@@ -143,6 +169,21 @@ class Ride extends Model
         };
         
         $normalizedCityOrder = array_map($normalize, $cityOrder);
+        
+        $targetStart = $normalize($fromCity);
+        $targetEnd = $normalize($toCity);
+
+        $startIndex = array_search($targetStart, $normalizedCityOrder);
+        $endIndex = array_search($targetEnd, $normalizedCityOrder);
+
+        if ($startIndex === false) $startIndex = 0;
+        if ($endIndex === false) $endIndex = count($route) - 1;
+
+        // Number of segments in total ride
+        $numSegments = count($route) - 1;
+        $segmentOccupancy = array_fill(0, $numSegments, 0);
+
+        $bookings = $this->bookings()->whereIn('status', ['pending', 'confirmed'])->get();
 
         foreach ($bookings as $booking) {
             $bStartName = $normalize($booking->pickup_point);
@@ -151,9 +192,8 @@ class Ride extends Model
             $bStart = array_search($bStartName, $normalizedCityOrder);
             $bEnd = array_search($bEndName, $normalizedCityOrder);
 
-            // Fallback for safety
-            if ($bStart === false) $bStart = 0;
-            if ($bEnd === false) $bEnd = count($route) - 1;
+            // Fallback for safety (don't assume index 0 if not found, just skip)
+            if ($bStart === false || $bEnd === false) continue;
 
             // Mark occupancy for all segments this booking covers
             for ($i = $bStart; $i < $bEnd; $i++) {

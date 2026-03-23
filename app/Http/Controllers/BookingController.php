@@ -104,32 +104,9 @@ class BookingController extends Controller
             $segmentPricePerSeat = max(0, $priceTo - $priceFrom);
             $totalPrice = $segmentPricePerSeat * $request->seats;
 
-            // Check if user already has a pending/confirmed booking for this ride
-            $existingBooking = Booking::where('ride_id', $rideId)
-                ->where('user_id', Auth::id())
-                ->whereIn('status', ['pending', 'confirmed'])
-                ->first();
-
-            if ($existingBooking) {
-                if ($existingBooking->status === 'pending') {
-                    return response()->json([
-                        'status' => true,
-                        'message' => 'Pending booking found. Proceeding to payment.',
-                        'data' => [
-                            'booking_id' => $existingBooking->id,
-                            'ride_details' => [
-                                'pickup' => $actualPickup,
-                                'drop' => $actualDrop,
-                                'date_time' => $ride->date_time,
-                                'seats_booked' => $existingBooking->seats_booked,
-                                'total_price' => $existingBooking->total_price,
-                                'status' => 'pending'
-                            ]
-                        ]
-                    ]);
-                }
-                return response()->json(['status' => false, 'message' => 'You already have a confirmed booking.'], 400);
-            }
+            // 🚀 Logic Refinement: Allow multiple bookings per user on the same ride
+            // (e.g. for different segments or because they decided to add more seats later)
+            // Existing check removed.
 
             // Create booking
             $booking = Booking::create([
@@ -354,11 +331,9 @@ class BookingController extends Controller
             }
 
             // Status update validation
+            // Logic Update: Allow cancelling even if already confirmed (Driver cancel)
             if ($booking->status === 'confirmed' && $request->status === 'rejected') {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Cannot reject an already confirmed booking.'
-                ], 400);
+                Log::info('Driver cancelling a confirmed booking', ['booking_id' => $bookingId]);
             }
 
             if ($request->status === 'completed' && $booking->status !== 'confirmed') {
