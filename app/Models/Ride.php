@@ -99,23 +99,87 @@ class Ride extends Model
     }
 
     /**
-     * Calculate available seats
+     * Get the full list of cities in the ride including pickup, stops and drop
      */
-    public function availableSeats()
+    public function getFullRoute()
     {
-        $bookedSeats = $this->bookings()
-            ->whereIn('status', ['pending', 'confirmed'])
-            ->sum('seats_booked');
+        $stops = $this->stopPoints()->orderBy('sequence', 'asc')->get();
         
-        return $this->total_seats - $bookedSeats;
+        $route = [];
+        $route[] = ['name' => $this->pickup_point, 'price' => 0, 'sequence' => 0];
+        
+        foreach ($stops as $stop) {
+            $route[] = ['name' => $stop->city_name, 'price' => $stop->price_from_pickup, 'sequence' => $stop->sequence + 1];
+        }
+        
+        $route[] = ['name' => $this->drop_point, 'price' => $this->price_per_seat, 'sequence' => count($route)];
+        
+        return $route;
     }
 
     /**
-     * Check if ride is full
+     * Calculate available seats for a specific segment
      */
-    public function isFull()
+    public function availableSeats($fromCity = null, $toCity = null)
     {
-        return $this->availableSeats() <= 0;
+        $route = $this->getFullRoute();
+        $cityOrder = array_column($route, 'name');
+        
+        $startIndex = $fromCity ? array_search($fromCity, $cityOrder) : 0;
+        $endIndex = $toCity ? array_search($toCity, $cityOrder) : count($route) - 1;
+
+        if ($startIndex === false) $startIndex = 0;
+        if ($endIndex === false) $endIndex = count($route) - 1;
+
+        // Number of segments in requested trip
+        $numSegments = count($route) - 1;
+        $segmentOccupancy = array_fill(0, $numSegments, 0);
+
+        $bookings = $this->bookings()->whereIn('status', ['pending', 'confirmed'])->get();
+
+        // Normalize city names for comparison
+        $normalize = function($name) {
+            return strtolower(trim(explode(',', $name)[0]));
+        };
+        
+        $normalizedCityOrder = array_map($normalize, $cityOrder);
+
+        foreach ($bookings as $booking) {
+            $bStartName = $normalize($booking->pickup_point);
+            $bEndName = $normalize($booking->drop_point);
+            
+            $bStart = array_search($bStartName, $normalizedCityOrder);
+            $bEnd = array_search($bEndName, $normalizedCityOrder);
+
+            // Fallback for safety
+            if ($bStart === false) $bStart = 0;
+            if ($bEnd === false) $bEnd = count($route) - 1;
+
+            // Mark occupancy for all segments this booking covers
+            for ($i = $bStart; $i < $bEnd; $i++) {
+                if (isset($segmentOccupancy[$i])) {
+                    $segmentOccupancy[$i] += $booking->seats_booked;
+                }
+            }
+        }
+
+        // Available seats for requested trip is total_seats - MAX(occupancy across all its segments)
+        $maxOccupancy = 0;
+        for ($i = $startIndex; $i < $endIndex; $i++) {
+            if (isset($segmentOccupancy[$i])) {
+                $maxOccupancy = max($maxOccupancy, $segmentOccupancy[$i]);
+            }
+        }
+
+        return max(0, $this->total_seats - $maxOccupancy);
+    }
+
+    /**
+     * Check if ride is full for a specific segment
+     */
+    public function isFull($fromCity = null, $toCity = null)
+    {
+        return $this->availableSeats($fromCity, $toCity) <= 0;
     }
 
     /**

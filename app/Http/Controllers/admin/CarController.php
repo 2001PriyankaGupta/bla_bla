@@ -5,6 +5,7 @@ namespace App\Http\Controllers\admin;
 use App\Http\Controllers\Controller;
 use App\Models\Car;
 use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -192,10 +193,28 @@ class CarController extends Controller
             $input['rc_back_image'] = $car->rc_back_image;
         }
         
-        // Handle verification status change
-        if ($input['license_verified'] == 'verified' && $car->license_verified != 'verified') {
-            $input['verified_by'] = auth()->user()->name ?? 'Admin';
-            $input['verified_at'] = now();
+        // Handle verification status change & Notification
+        if ($input['license_verified'] != $car->license_verified) {
+             if ($input['license_verified'] == 'verified') {
+                 $input['verified_by'] = auth()->user()->name ?? 'Admin';
+                 $input['verified_at'] = now();
+                 
+                 Notification::create([
+                     'user_id' => $car->user_id,
+                     'title'   => 'Car Verified',
+                     'message' => "Your car ({$car->car_make} {$car->car_model}) has been successfully verified by the admin.",
+                     'type'    => 'car_verification',
+                     'data'    => ['car_id' => $car->id, 'status' => 'verified']
+                 ]);
+             } elseif ($input['license_verified'] == 'rejected') {
+                 Notification::create([
+                     'user_id' => $car->user_id,
+                     'title'   => 'Car Verification Rejected',
+                     'message' => "Your car ({$car->car_make} {$car->car_model}) verification has been rejected by the admin. Please contact support.",
+                     'type'    => 'car_verification',
+                     'data'    => ['car_id' => $car->id, 'status' => 'rejected']
+                 ]);
+             }
         }
 
         $car->update($input);
@@ -232,14 +251,35 @@ class CarController extends Controller
             'license_verified' => 'required|in:pending,verified,rejected',
         ]);
         
-        $car->license_verified = $request->license_verified;
+        $newStatus = $request->license_verified;
+        $oldStatus = $car->license_verified;
         
-        if ($request->license_verified == 'verified') {
-             $car->verified_by = auth()->user()->name ?? 'Admin';
-             $car->verified_at = now();
+        if ($newStatus != $oldStatus) {
+            $car->license_verified = $newStatus;
+            
+            if ($newStatus == 'verified') {
+                 $car->verified_by = auth()->user()->name ?? 'Admin';
+                 $car->verified_at = now();
+                 
+                 Notification::create([
+                    'user_id' => $car->user_id,
+                    'title'   => 'Car Verified',
+                    'message' => "Your car ({$car->car_make} {$car->car_model}) has been successfully verified by the admin.",
+                    'type'    => 'car_verification',
+                    'data'    => ['car_id' => $car->id, 'status' => 'verified']
+                ]);
+            } elseif ($newStatus == 'rejected') {
+                Notification::create([
+                    'user_id' => $car->user_id,
+                    'title'   => 'Car Verification Rejected',
+                    'message' => "Your car ({$car->car_make} {$car->car_model}) verification has been rejected by the admin. Please contact support.",
+                    'type'    => 'car_verification',
+                    'data'    => ['car_id' => $car->id, 'status' => 'rejected']
+                ]);
+            }
+            
+            $car->save();
         }
-        
-        $car->save();
         
         return response()->json(['success' => true, 'message' => 'Status updated successfully']);
     }

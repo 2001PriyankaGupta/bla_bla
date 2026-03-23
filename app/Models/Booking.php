@@ -16,6 +16,8 @@ class Booking extends Model
         'total_price',
         'status',
         'special_requests',
+        'pickup_point',
+        'drop_point',
         'stop_point_id',
         'drop_point_type',
         'approved_at',

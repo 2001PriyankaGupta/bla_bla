@@ -272,6 +272,7 @@ class AdminAuthController extends Controller
 
     public function forgotPassword(Request $request) 
     {
+        Log::info("forgotPassword Request received: ", $request->all());
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|exists:users,email',
         ]);
@@ -281,11 +282,11 @@ class AdminAuthController extends Controller
         }
 
         $email = $request->email;
-        $code = Str::random(6); // Or numeric: rand(100000, 999999)
+        $code = rand(100000, 999999); // Or numeric: rand(100000, 999999)
         // Store code
         PasswordResetCode::updateOrCreate(
             ['email' => $email],
-            ['code' => $code, 'expires_at' => Carbon::now()->addMinutes(10)]
+            ['code' => $code, 'expires_at' => Carbon::now()->addMinutes(1)]
         );
 
         // Send Email
@@ -311,8 +312,12 @@ class AdminAuthController extends Controller
 
         $record = PasswordResetCode::where('email', $request->email)->where('code', $request->code)->first();
 
-        if (!$record || Carbon::now()->greaterThan($record->expires_at)) {
-             return response()->json(['status' => 'false', 'message' => 'Invalid or expired code.'], 400);
+        if (!$record) {
+             return response()->json(['status' => 'false', 'message' => 'Invalid reset code.'], 400);
+        }
+
+        if (Carbon::now()->greaterThan($record->expires_at)) {
+            return response()->json(['status' => 'false', 'message' => 'Your OTP has expired. Please request a new one.'], 400);
         }
 
         return response()->json(['status' => 'true', 'message' => 'Code verified.']);
@@ -332,12 +337,22 @@ class AdminAuthController extends Controller
         // Verify again just in case
         $record = PasswordResetCode::where('email', $request->email)->where('code', $request->code)->first();
 
-        if (!$record || Carbon::now()->greaterThan($record->expires_at)) {
-             return response()->json(['status' => 'false', 'message' => 'Invalid or expired code.'], 400);
+        if (!$record) {
+             return response()->json(['status' => 'false', 'message' => 'Invalid reset code.'], 400);
+        }
+
+        if (Carbon::now()->greaterThan($record->expires_at)) {
+            return response()->json(['status' => 'false', 'message' => 'Your OTP has expired. Please request a new one.'], 400);
         }
 
         // Update User
         $user = User::where('email', $request->email)->first();
+
+        // Check if the new password is the same as the current one
+        if (Hash::check($request->password, $user->password)) {
+            return response()->json(['status' => 'false', 'message' => 'The new password cannot be the same as your current password.'], 400);
+        }
+
         $user->password = Hash::make($request->password);
         $user->save();
 

@@ -59,14 +59,50 @@ class BookingController extends Controller
                 ], 400);
             }
 
-            // Check available seats
-            $availableSeats = $ride->availableSeats();
+            // Handle locations from request or fallback to ride defaults
+            $pickupPoint = $request->pickup_point ?? $ride->pickup_point;
+            $dropPoint = $request->drop_point ?? $ride->drop_point;
+
+            // Get Full Route Sequence for logic verification
+            $route = $ride->getFullRoute();
+            $cityNames = array_map(fn($r) => strtolower(trim($r['name'])), $route);
+            
+            $matchFrom = strtolower(trim($pickupPoint));
+            $matchTo = strtolower(trim($dropPoint));
+
+            $fromIdx = -1;
+            $toIdx = -1;
+
+            foreach ($cityNames as $idx => $cityName) {
+                if (str_contains($cityName, $matchFrom)) $fromIdx = $idx;
+                if (str_contains($cityName, $matchTo)) $toIdx = $idx;
+            }
+
+            if ($fromIdx === -1 || $toIdx === -1 || $toIdx <= $fromIdx) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid route selected for this ride.'
+                ], 400);
+            }
+
+            // Real Pickup/Drop names from route
+            $actualPickup = $route[$fromIdx]['name'];
+            $actualDrop = $route[$toIdx]['name'];
+
+            // 1. Check available seats for this specific segment
+            $availableSeats = $ride->availableSeats($actualPickup, $actualDrop);
             if ($request->seats > $availableSeats) {
                 return response()->json([
                     'status' => false,
-                    'message' => "Only {$availableSeats} seats available"
+                    'message' => "Only {$availableSeats} seats available for this specific segment."
                 ], 400);
             }
+
+            // 2. Calculate dynamic price for the segment
+            $priceFrom = $route[$fromIdx]['price'];
+            $priceTo = $route[$toIdx]['price'];
+            $segmentPricePerSeat = max(0, $priceTo - $priceFrom);
+            $totalPrice = $segmentPricePerSeat * $request->seats;
 
             // Check if user already has a pending/confirmed booking for this ride
             $existingBooking = Booking::where('ride_id', $rideId)
@@ -75,50 +111,24 @@ class BookingController extends Controller
                 ->first();
 
             if ($existingBooking) {
-                // If the booking is pending, return it so the user can pay (Status true, but maybe a message indicating it exists)
                 if ($existingBooking->status === 'pending') {
-                    // Update seats if needed or just return current
-                     // Calculate total price
-                    $totalPrice = $ride->price_per_seat * $existingBooking->seats_booked;
-
                     return response()->json([
                         'status' => true,
                         'message' => 'Pending booking found. Proceeding to payment.',
                         'data' => [
                             'booking_id' => $existingBooking->id,
                             'ride_details' => [
-                                'pickup' => $ride->pickup_point,
-                                'drop' => $ride->drop_point,
+                                'pickup' => $actualPickup,
+                                'drop' => $actualDrop,
                                 'date_time' => $ride->date_time,
                                 'seats_booked' => $existingBooking->seats_booked,
-                                'total_price' => $totalPrice,
+                                'total_price' => $existingBooking->total_price,
                                 'status' => 'pending'
-                            ],
-                            'driver_contact' => [
-                                'name' => $ride->car->user->name ?? 'Driver',
-                                'phone' => $ride->car->user->phone ?? null
                             ]
                         ]
                     ]);
                 }
-
-                return response()->json([
-                    'status' => false,
-                    'message' => 'You already have a confirmed booking for this ride'
-                ], 400);
-            }
-
-            // Handle locations from request or fallback to ride defaults
-            $pickupPoint = $request->pickup_point ?? $ride->pickup_point;
-            $dropPoint = $request->drop_point ?? $ride->drop_point;
-
-            // Handle Stop Point pricing and location (Drop override)
-            if ($request->drop_point_type === 'stop' && $request->stop_point_id) {
-                $stopPoint = StopPoint::find($request->stop_point_id);
-                if ($stopPoint) {
-                    $totalPrice = $stopPoint->price_from_pickup * $request->seats;
-                    $dropPoint = $stopPoint->city_name;
-                }
+                return response()->json(['status' => false, 'message' => 'You already have a confirmed booking.'], 400);
             }
 
             // Create booking
@@ -129,10 +139,8 @@ class BookingController extends Controller
                 'total_price' => $totalPrice,
                 'status' => ($request->payment_method === 'online') ? 'awaiting_payment' : 'pending',
                 'special_requests' => $request->special_requests,
-                'stop_point_id' => $request->stop_point_id,
-                'drop_point_type' => $request->drop_point_type,
-                'pickup_point' => $pickupPoint,
-                'drop_point' => $dropPoint,
+                'pickup_point' => $actualPickup,
+                'drop_point' => $actualDrop,
             ]);
 
             Log::info('New booking created', [

@@ -13,7 +13,8 @@ class StopPoint extends Model
     protected $fillable = [
         'ride_id',
         'city_name',
-        'price_from_pickup'
+        'price_from_pickup',
+        'sequence'
     ];
 
     public function ride()

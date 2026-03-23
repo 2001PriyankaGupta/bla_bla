@@ -145,10 +145,69 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        $user->delete();
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+            $userId = $user->id;
 
-        return redirect()->route('admin.users.index')
-                        ->with('success', 'User deleted successfully.');
+            // 1. If User has cars, delete associated items
+            $cars = \App\Models\Car::where('user_id', $userId)->get();
+            foreach ($cars as $car) {
+                $rides = \App\Models\Ride::where('car_id', $car->id)->get();
+                foreach ($rides as $ride) {
+                    \App\Models\Message::where('ride_id', $ride->id)->delete();
+                    \App\Models\StopPoint::where('ride_id', $ride->id)->delete();
+                    
+                    $bookings = \App\Models\Booking::where('ride_id', $ride->id)->get();
+                    foreach ($bookings as $booking) {
+                        \App\Models\Payment::where('booking_id', $booking->id)->delete();
+                        $booking->delete();
+                    }
+                    $ride->delete();
+                }
+                $car->delete();
+            }
+
+            // 2. Delete bookings made by the user (as passenger)
+            $userBookings = \App\Models\Booking::where('user_id', $userId)->get();
+            foreach ($userBookings as $booking) {
+                \App\Models\Payment::where('booking_id', $booking->id)->delete();
+                $booking->delete();
+            }
+
+            // 3. Delete reviews related to the user
+            \App\Models\Review::where('driver_id', $userId)
+                ->orWhere('user_id', $userId)
+                ->orWhere('reviewed_by', $userId)
+                ->delete();
+
+            // 4. Delete Support Tickets & Replies
+            $tickets = \App\Models\SupportTicket::where('user_id', $userId)->get();
+            foreach ($tickets as $ticket) {
+                \App\Models\TicketReply::where('ticket_id', $ticket->id)->delete();
+                $ticket->delete();
+            }
+            \App\Models\TicketReply::where('user_id', $userId)->delete();
+
+            // 5. Delete Messages where user is sender or receiver
+            if (class_exists(\App\Models\Message::class)) {
+                \App\Models\Message::where('sender_id', $userId)
+                    ->orWhere('receiver_id', $userId)
+                    ->delete();
+            }
+
+            // 6. Delete Notifications
+            \App\Models\Notification::where('user_id', $userId)->delete();
+
+            // Finally, delete the User
+            $user->delete();
+
+            \Illuminate\Support\Facades\DB::commit();
+            return redirect()->route('admin.users.index')->with('success', 'User and all associated details deleted successfully.');
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return redirect()->route('admin.users.index')->with('error', 'Failed to delete user: ' . $e->getMessage());
+        }
     }
 
     public function toggleStatus(User $user)

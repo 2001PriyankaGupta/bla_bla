@@ -225,10 +225,11 @@ class RideController extends Controller
             
             // Handle Stop Points
             if ($request->has('stop_points')) {
-                foreach ($request->stop_points as $stop) {
+                foreach ($request->stop_points as $index => $stop) {
                     $ride->stopPoints()->create([
                         'city_name' => $stop['city_name'],
-                        'price_from_pickup' => $stop['price']
+                        'price_from_pickup' => $stop['price'],
+                        'sequence' => $index + 1
                     ]);
                 }
             }
@@ -635,96 +636,68 @@ class RideController extends Controller
             Log::info('Date: ' . $departingDate);
             Log::info('Passengers: ' . $passengers);
 
-            // Define keyword arrays for broader matching
-            $fromKeywords = [];
-            $toKeywords   = [];
-
-            // Example: expand Ghaziabad to include nearby cities
-            if (strtolower($from) === 'ghaziabad') {
-                $fromKeywords = ['ghaziabad', 'noida', 'delhi', 'ncr'];
-            } else {
-                $fromKeywords = [strtolower($from)];
-            }
-
-            if (strtolower($to) === 'gurgaon' || strtolower($to) === 'gurugram') {
-                $toKeywords = ['gurgaon', 'gurugram'];
-            } else {
-                $toKeywords = [strtolower($to)];
-            }
-
-            // Build query
-            $query = Ride::with(['car', 'car.user', 'stopPoints'])
-                ->withSum(['bookings as booked_seats' => function($q) {
-                    $q->whereIn('status', ['pending', 'confirmed']);
-                }], 'seats_booked')
-                ->where(function($q) use ($fromKeywords) {
-                    // Match main pickup point
-                    $q->where(function($sq) use ($fromKeywords) {
-                        foreach ($fromKeywords as $word) {
-                            $sq->orWhereRaw('LOWER(pickup_point) LIKE ?', ['%' . $word . '%']);
-                        }
-                    })
-                    // OR match any stop point as pickup
-                    ->orWhereHas('stopPoints', function($sq) use ($fromKeywords) {
-                        $sq->where(function($ssq) use ($fromKeywords) {
-                            foreach ($fromKeywords as $word) {
-                                $ssq->orWhereRaw('LOWER(city_name) LIKE ?', ['%' . $word . '%']);
-                            }
-                        });
-                    });
-                })
-                ->where(function($q) use ($toKeywords) {
-                    // Match main drop point
-                    $q->where(function($sq) use ($toKeywords) {
-                        foreach ($toKeywords as $word) {
-                            $sq->orWhereRaw('LOWER(drop_point) LIKE ?', ['%' . $word . '%']);
-                        }
-                    })
-                    // OR match any stop point as drop
-                    ->orWhereHas('stopPoints', function($sq) use ($toKeywords) {
-                        $sq->where(function($ssq) use ($toKeywords) {
-                            foreach ($toKeywords as $word) {
-                                $ssq->orWhereRaw('LOWER(city_name) LIKE ?', ['%' . $word . '%']);
-                            }
-                        });
-                    });
-                })
+            // Get all candidate rides
+            $allRides = Ride::with(['car', 'car.user', 'stopPoints'])
                 ->whereRaw('DATE(date_time) = ?', [$departingDate])
                 ->where('date_time', '>', now())
-                ->orderBy('date_time', 'asc');
+                ->where('status', 'active')
+                ->get();
 
-            Log::info('=== SQL QUERY ===');
-            Log::info($query->toSql());
-            Log::info('Bindings: ', $query->getBindings());
+            $matchingRides = [];
 
-            // Filter by passengers (available seats >= requested)
-            $rides = $query->get()->filter(function($ride) use ($passengers) {
-                $booked = $ride->booked_seats ?? 0;
-                return ($ride->total_seats - $booked) >= $passengers;
-            })->values();
+            foreach ($allRides as $ride) {
+                $route = $ride->getFullRoute();
+                $cityNames = array_map(fn($r) => strtolower(trim($r['name'])), $route);
+                
+                $searchFrom = strtolower(trim($from));
+                $searchTo = strtolower(trim($to));
 
-            Log::info('=== FOUND RIDES COUNT ===');
-            Log::info('Count: ' . $rides->count());
+                // Find indices of from and to in the route
+                $fromIdx = -1;
+                $toIdx = -1;
 
-            if ($rides->isEmpty()) {
-                return response()->json([
-                    'status' => true,
-                    'message' => 'No rides found for your search criteria',
-                    'data' => [],
-                    'search_criteria' => [
-                        'from' => $from,
-                        'to' => $to,
-                        'departing' => $departingDate,
-                        'passengers' => $passengers
-                    ]
-                ]);
+                foreach ($cityNames as $idx => $cityName) {
+                    if (str_contains($cityName, $searchFrom)) $fromIdx = $idx;
+                    if (str_contains($cityName, $searchTo)) $toIdx = $idx;
+                }
+
+                // Sequence Check: From must exist, To must exist, and To must be after From
+                if ($fromIdx !== -1 && $toIdx !== -1 && $toIdx > $fromIdx) {
+                    
+                    // 1. Calculate price for this specific segment
+                    $priceFrom = $route[$fromIdx]['price'];
+                    $priceTo = $route[$toIdx]['price'];
+                    $segmentPrice = max(0, $priceTo - $priceFrom);
+
+                    // 2. Check seat availability for this segment
+                    $available = $ride->availableSeats($route[$fromIdx]['name'], $route[$toIdx]['name']);
+
+                    if ($available >= $passengers) {
+                        $rideData = $ride->toArray();
+                        // 🚀 CRITICAL: Override top-level data for segment-specific UI
+                        $rideData['available_seats'] = $available; 
+                        $rideData['booked_seats'] = $ride->total_seats - $available;
+                        $rideData['price_per_seat'] = (float)$segmentPrice;
+                        
+                        $rideData['search_segment'] = [
+                            'pickup' => $route[$fromIdx]['name'],
+                            'drop' => $route[$toIdx]['name'],
+                            'price' => (float)$segmentPrice,
+                            'available_seats' => $available
+                        ];
+                        
+                        $matchingRides[] = $rideData;
+                    }
+                }
             }
 
-            Log::info('=== RIDES FOUND SUCCESSFULLY ===');
+            Log::info('=== FOUND RIDES COUNT ===');
+            Log::info('Count: ' . count($matchingRides));
+
             return response()->json([
                 'status' => true,
-                'message' => 'Rides found successfully',
-                'data' => $rides,
+                'message' => count($matchingRides) > 0 ? 'Rides found successfully' : 'No rides found for your search criteria',
+                'data' => $matchingRides,
                 'search_criteria' => [
                     'from' => $from,
                     'to' => $to,
@@ -1035,42 +1008,44 @@ class RideController extends Controller
     public function getTripDetails($id)
     {
         try {
-            // Pehle booking find karein with all required relationships
-            $booking = \App\Models\Booking::with([
-                'ride',
-                'ride.car',
-                'ride.car.user:id,name,profile_picture,phone,email,rating,total_rides',
-                'user:id,name,profile_picture,phone,email,gender', // Passenger details
-                'payment' // Eager load payment
-            ])->find($id);
+            // Check if ID is for Booking or Ride
+        $booking = \App\Models\Booking::with([
+            'ride',
+            'ride.car',
+            'ride.car.user:id,name,profile_picture,phone,email,rating,total_rides',
+            'user:id,name,profile_picture,phone,email,gender',
+            'payment'
+        ])->find($id);
 
-            if (!$booking) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Booking not found'
-                ], 404);
-            }
-
+        $ride = null;
+        if ($booking) {
             $ride = $booking->ride;
-
-            if (!$ride) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Ride not found for this booking'
-                ], 404);
-            }
-
-            // Calculate available seats for this ride
-            $bookedSeats = \App\Models\Booking::where('ride_id', $ride->id)
-                ->whereIn('status', ['pending', 'confirmed'])
-                ->sum('seats_booked');
+        } else {
+            // If not a booking ID, maybe it's a Ride ID
+            $ride = \App\Models\Ride::with([
+                'car',
+                'car.user:id,name,profile_picture,phone,email,rating,total_rides',
+                'stopPoints'
+            ])->find($id);
             
-            $availableSeats = $ride->total_seats - $bookedSeats;
+            if (!$ride) {
+                return response()->json(['status' => false, 'message' => 'Trip not found'], 404);
+            }
+        }
+
+        // Determine pickup and drop points based on context (driver vs passenger)
+        $displayPickup = $booking ? ($booking->pickup_point ?? $ride->pickup_point) : $ride->pickup_point;
+        $displayDrop = $booking ? ($booking->drop_point ?? $ride->drop_point) : $ride->drop_point;
+
+        // Calculate available seats... 
+        $availableSeats = $ride->availableSeats($displayPickup, $displayDrop);
 
             // Get co-passengers for this ride (excluding current passenger)
             $coPassengers = \App\Models\Booking::with(['user:id,name,profile_picture,gender'])
                 ->where('ride_id', $ride->id)
-                ->where('id', '!=', $booking->id) // Exclude current booking
+                ->when($booking, function ($query) use ($booking) { // Only exclude if it's a booking context
+                    return $query->where('id', '!=', $booking->id);
+                })
                 ->whereIn('status', ['pending', 'confirmed'])
                 ->get()
                 ->map(function($coBooking) {
@@ -1106,11 +1081,11 @@ class RideController extends Controller
                     'ride_id' => $ride->id,
                     'date' => Carbon::parse($ride->date_time)->format('d-M-Y'),
                     'departure_time' => Carbon::parse($ride->date_time)->format('h:i A'),
-                    'pickup_point' => $booking->pickup_point ?? $ride->pickup_point,
-                    'pickup_location' => ($booking->pickup_point ?? $ride->pickup_point) . ', India',
-                    'arrival_time' => Carbon::parse($ride->date_time)->addMinutes(90)->format('h:i A'),
-                    'drop_point' => $booking->drop_point ?? $ride->drop_point,
-                    'drop_location' => ($booking->drop_point ?? $ride->drop_point) . ', India',
+                    'pickup_point' => $displayPickup,
+                'pickup_location' => $displayPickup . ($booking ? '' : ', India'),
+                'arrival_time' => Carbon::parse($ride->date_time)->addMinutes(90)->format('h:i A'),
+                'drop_point' => $displayDrop,
+                'drop_location' => $displayDrop . ($booking ? '' : ', India'),
                     'duration' => 'Calculated...',
                     'distance' => 'Calculated...',
                 ],

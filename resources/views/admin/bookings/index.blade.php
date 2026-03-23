@@ -374,9 +374,9 @@
                                             <td>
                                                 <div class="ride-info">
                                                     <div class="ride-route d-flex align-items-center">
-                                                        <span class="text-success fw-bold">{{ $shortLoc($booking->ride->pickup_point ?? '') }}</span>
+                                                        <span class="text-success fw-bold">{{ $shortLoc($booking->pickup_point ?? '') }}</span>
                                                         <i class="fas fa-long-arrow-alt-right text-muted mx-2"></i>
-                                                        <span class="text-danger fw-bold">{{ $shortLoc($booking->ride->drop_point ?? '') }}</span>
+                                                        <span class="text-danger fw-bold">{{ $shortLoc($booking->drop_point ?? '') }}</span>
                                                     </div>
                                                     <div class="ride-meta mt-1">
                                                         <span class="badge bg-light text-muted border-0 p-0" style="font-size: 11px;">
