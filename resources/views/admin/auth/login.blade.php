@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Travel App | Admin Login</title>
+    <title>ReNue EV | Admin Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css" rel="stylesheet">
     <style>
@@ -145,13 +145,18 @@
             font-size: 1.5rem;
             font-weight: 800;
             color: var(--primary-color);
-            margin-bottom: 40px;
+            margin-bottom: 20px;
             display: flex;
+            flex-direction: column;
             align-items: center;
         }
 
         .brand-name i {
             margin-right: 10px;
+        }
+
+        .login-header {
+            text-align: center;
         }
 
         .login-header h2 {
@@ -256,7 +261,9 @@
             margin-bottom: 24px;
             font-size: 0.95rem;
             display: flex;
-            align-items: flex-start;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
 
         .alert-error {
@@ -292,8 +299,8 @@
     <div class="login-card">
         <div class="left-panel">
             <div class="left-content-wrapper">
-                <h1>Travel App Dashboard</h1>
-                <p class="main-desc">Admin Control Center. Empowering your travel business with a sleek, powerful, and efficient management suite.</p>
+                <h1>ReNue EV Dashboard</h1>
+                <p class="main-desc">Admin Control Center. Empowering your sustainable transport business with a sleek, powerful, and efficient management suite.</p>
                 
                 <div class="features-list">
                     <div class="feature-item">
@@ -330,13 +337,15 @@
             </div>
             
             <div class="bottom-branding">
-                <p>&copy; 2024 Travel App Inc. All rights reserved.</p>
+                <p>&copy; 2024 ReNue EV Inc. All rights reserved.</p>
             </div>
         </div>
         <div class="right-panel">
             <div class="brand-name">
-                <i class="mdi mdi-map-marker-path"></i>
-                TRAVEL APP
+                <img src="{{ asset('images/logo.png') }}" alt="" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover; border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px;
+                border-radius: 80px;">
+                <br>
+                ReNue EV
             </div>
             
             <div class="login-header">

@@ -6,19 +6,21 @@
             <div class="navbar-brand-box" style="background-color: #248907; border-bottom: 1px solid rgba(255,255,255,0.1);">
                 <a href="{{ route('admin.dashboard') }}" class="logo logo-dark">
                     <span class="logo-sm">
-                        <h3 style="margin-top: 22px; color:white; font-size: 14px; font-weight: 800; letter-spacing: 1px;">T</h3>
+                        <img src="{{ asset('images/logo.png') }}" alt="" class="rounded-circle" style="width: 32px; height: 32px; margin-top: 2px; background-color: white; padding: 2px;">
                     </span>
-                    <span class="logo-lg">
-                        <h3 style="margin-top: 22px; color:white; font-size: 28px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">Travel</h3>
+                    <span class="logo-lg d-flex align-items-center">
+                        <img src="{{ asset('images/logo.png') }}" alt="" class="rounded-circle" style="width: 48px; height: 48px; margin-top: 10px; background-color: white; padding: 3px;">
+                        <h3 style="margin-top: 22px; margin-left: 10px; color:white; font-size: 20px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">ReNue EV</h3>
                     </span>
                 </a>
 
                 <a href="{{ route('admin.dashboard') }}" class="logo logo-light">
                     <span class="logo-sm">
-                         <h3 style="margin-top: 22px; color:white; font-size: 14px; font-weight: 800; letter-spacing: 1px;">T</h3>
+                        <img src="{{ asset('images/logo.png') }}" alt="" class="rounded-circle" style="width: 32px; height: 32px; margin-top: 2px; background-color: white; padding: 2px;">
                     </span>
-                    <span class="logo-lg">
-                        <h3 style="margin-top: 22px; color:white; font-size: 28px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">Travel</h3>
+                    <span class="logo-lg d-flex align-items-center">
+                        <img src="{{ asset('images/logo.png') }}" alt="" class="rounded-circle" style="width: 48px; height: 48px; margin-top: 10px; background-color: white; padding: 3px;">
+                        <h3 style="margin-top: 22px; margin-left: 10px; color:white; font-size: 20px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">ReNue EV</h3>
                     </span>
                 </a>
             </div>

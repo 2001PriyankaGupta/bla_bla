@@ -120,7 +120,7 @@
         <!-- Header -->
         <div class="dashboard-header">
             <h1 style="color: black!important;">Dashboard Overview</h1>
-            <p>Welcome back, bla bla! Here's a snapshot of your platform's performance.</p>
+            <p>Welcome back, ReNue EV Admin! Here's a snapshot of your platform's performance.</p>
             <h6 style="margin-top: 17px;color:black;font-size:20px;">Quick Actions</h6>
         </div>
 
